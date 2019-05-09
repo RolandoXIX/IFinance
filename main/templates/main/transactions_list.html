@@ -1,0 +1,57 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+
+<div class="container-fluid table" style="line-height: 0.8; font-size:80%;">
+    <form action="#" method="get">
+        <table class="table table-hover table-sm">
+          <thead>
+            <tr>
+              <th class="bs-checkbox" style="width: 3%"><input data-index="0" name="btSelectItem" type="checkbox"></th>
+              <th scope="col" style="width: 8%">Date</th>
+              <th scope="col" style="width: 20%">Category / Account</th>
+              <th scope="col" style="width: 30%">Description</th>
+              <th scope="col" style="width: 3%"><span class="oi oi-transfer"></span></th>
+              <th scope="col" style="width: 15%">Amount</th>
+              <th scope="col" style="width: 5%">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for transaction in transactions_list %}
+            <tr>
+              <td class="bs-checkbox "><input data-index="0" name="btSelectItem" type="checkbox"></td>
+              <td>{{ transaction.date|date:"SHORT_DATE_FORMAT" }}</td>
+
+              {% if transaction.to_account.pk != active %}
+              <td>{{ transaction.to_account}}</td>
+              {% else %}
+              <td>{{ transaction.from_account}}</td>
+              {% endif %}
+
+              <td>{{ transaction.description }}</td>
+
+              {% if transaction.to_account in pay_accounts and transaction.from_account in pay_accounts %}
+              <td><span class="oi oi-transfer" style="color:blue"></span></td>
+              {% elif transaction.to_account in pay_accounts and transaction.amount > 0 %}
+              <td><span class="oi oi-arrow-left" style="color:green"></span></td>
+              {% else %}
+              <td><span class="oi oi-arrow-right" style="color:red"></span></td>
+              {% endif %}
+
+              {% if transaction.to_account.pk != active %}
+              <td>-{{ transaction.amount|floatformat:2}}</td>
+              {% else %}
+              <td>{{ transaction.amount|floatformat:2}}</td>
+              {% endif %}
+              <td>&nbsp<a href="/transactions/{{ transaction.from_account.pk }}/{{ transaction.pk }}/edit">
+                <span class="oi oi-eye">&nbsp&nbsp</span></a><span class="oi oi-trash"></span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="submit">Procesar</button>
+    </form>
+</div>
+
+{% endblock %}
