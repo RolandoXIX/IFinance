@@ -83,10 +83,14 @@
       <div class="list-group list-group-flush">
 
         {% for account, total in accounts_list %}
-        <a href="/transactions/{{ account.pk }}" class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light">{{ account.name }}
+        <a href="{% url 'transactions_account' account.pk %}" class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light">{{ account.name }}
           <span class="badge badge-primary badge-pill">{{ total }}</span>
         </a>
         {% endfor %}
+
+        <br>
+        <a class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light" href="{% url 'add_account' %}" >Add Account</a>
+
       </div>
     </div>
     <!-- /#sidebar-wrapper -->
@@ -96,19 +100,18 @@
 
       <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
         <button class="btn btn-sm" id="menu-toggle"><span class="oi oi-align-left"></span></button>
-        <span class="col-1"></span>
+
 
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
 
+        <div>{{ active.name }}</div>
+
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
             <li class="nav-item active">
-              <a class="nav-link" href="./add">Add Transaction <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">Link</a>
+              <a class="nav-link" href="{% url 'add_transaction' account=active.pk %}">Add Transaction <span class="sr-only">(current)</span></a>
             </li>
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

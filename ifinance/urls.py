@@ -24,4 +24,6 @@ urlpatterns = [
     path('transactions/<int:account>/', main_views.TransactionsListView.as_view(), name='transactions_account'),
     path('transactions/<int:account>/add/', main_views.CrudTransaction.as_view(), name='add_transaction'),
     path('transactions/<int:account>/<int:pk>/edit/', main_views.CrudTransaction.as_view(), name='edit_transaction'),
+    path('account/add/', main_views.CrudAccount.as_view(), name='add_account'),
+    path('account/<int:pk>/edit/', main_views.CrudAccount.as_view(), name='edit_account'),
 ]

@@ -38,7 +38,7 @@
               <td><span class="oi oi-arrow-right" style="color:red"></span></td>
               {% endif %}
 
-              {% if transaction.to_account.pk != active %}
+              {% if transaction.to_account.pk != active.pk %}
               <td>-{{ transaction.amount|floatformat:2}}</td>
               {% else %}
               <td>{{ transaction.amount|floatformat:2}}</td>
