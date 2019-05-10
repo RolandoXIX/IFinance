@@ -20,7 +20,8 @@ from main import views as main_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(url='transactions/0/'), name='main_home'),
+    path('', RedirectView.as_view(url='transactions/'), name='main_home'),
+    path('transactions/', main_views.TransactionsListView.as_view(), name='transactions_account', kwargs={'account':None}),
     path('transactions/<int:account>/', main_views.TransactionsListView.as_view(), name='transactions_account'),
     path('transactions/<int:account>/add/', main_views.CrudTransaction.as_view(), name='add_transaction'),
     path('transactions/<int:account>/<int:pk>/edit/', main_views.CrudTransaction.as_view(), name='edit_transaction'),

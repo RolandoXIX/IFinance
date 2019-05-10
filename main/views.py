@@ -34,8 +34,8 @@ class AccountsMixin:
 
 class TransactionsListView(View, AccountsMixin):
 
-    def get(self, request, account=0):
-        if account > 0:
+    def get(self, request, account=None):
+        if account:
             transactions_list = TransactionEntry.objects.filter(Q(from_account=account) | Q(to_account=account))
         else:
             transactions_list = TransactionEntry.objects.all
