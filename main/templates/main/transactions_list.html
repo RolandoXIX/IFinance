@@ -9,6 +9,11 @@
             <tr>
               <th class="bs-checkbox" style="width: 3%"><input data-index="0" name="btSelectItem" type="checkbox"></th>
               <th scope="col" style="width: 8%">Date</th>
+
+              {% if active.pk == 0 %}
+              <th scope="col" style="width: 20%">Account</th>
+              {% endif %}
+
               <th scope="col" style="width: 20%">Category / Account</th>
               <th scope="col" style="width: 30%">Description</th>
               <th scope="col" style="width: 3%"><span class="oi oi-transfer"></span></th>
@@ -22,7 +27,11 @@
               <td class="bs-checkbox "><input data-index="0" name="btSelectItem" type="checkbox"></td>
               <td>{{ transaction.date|date:"SHORT_DATE_FORMAT" }}</td>
 
-              {% if transaction.to_account.pk != active %}
+              {% if active.pk == 0 %}
+              <td>{{ transaction.from_account}}</td>
+              {% endif %}
+
+              {% if transaction.to_account.pk != active.pk %}
               <td>{{ transaction.to_account}}</td>
               {% else %}
               <td>{{ transaction.from_account}}</td>
@@ -38,10 +47,10 @@
               <td><span class="oi oi-arrow-right" style="color:red"></span></td>
               {% endif %}
 
-              {% if transaction.to_account.pk != active.pk %}
-              <td>-{{ transaction.amount|floatformat:2}}</td>
-              {% else %}
+              {% if transaction.to_account.pk == active.pk %}
               <td>{{ transaction.amount|floatformat:2}}</td>
+              {% else %}
+              <td>{{ transaction.negative_amount|floatformat:2}}</td>
               {% endif %}
               <td>&nbsp<a href="/transactions/{{ transaction.from_account.pk }}/{{ transaction.pk }}/edit">
                 <span class="oi oi-eye">&nbsp&nbsp</span></a><span class="oi oi-trash"></span>

@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.functions import Coalesce
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.utils.datetime_safe import datetime
 from django.views.generic.base import View
@@ -29,13 +29,17 @@ class AccountsMixin:
         return account_and_balance
 
     def get_active_account(self, pk):
-        return Account.objects.get(pk=pk)
+        try:
+            active = Account.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            active = {'name': 'All accounts', 'pk': 0}  # in order to use active.name and active.pk in template.
+        return active
 
 
 class TransactionsListView(View, AccountsMixin):
 
-    def get(self, request, account=0):
-        if account > 0:
+    def get(self, request, account=None):
+        if account:
             transactions_list = TransactionEntry.objects.filter(Q(from_account=account) | Q(to_account=account))
         else:
             transactions_list = TransactionEntry.objects.all

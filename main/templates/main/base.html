@@ -79,7 +79,9 @@
 
     <!-- Sidebar -->
     <div class="bg-light border-right " id="sidebar-wrapper">
-      <div class="sidebar-heading d-flex justify-content-between align-items-center bg-light">iFinance</div>
+      <div class="sidebar-heading d-flex justify-content-between align-items-center bg-light">
+        <a href="{% url 'transactions_account' %}" class="list-group-item-action">iFinance</a>
+      </div>
       <div class="list-group list-group-flush">
 
         {% for account, total in accounts_list %}

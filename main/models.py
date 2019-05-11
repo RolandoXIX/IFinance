@@ -43,7 +43,7 @@ class Account(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=20)
     description = models.TextField(max_length=1000, null=True, blank=True)
-    initial_balance = models.DecimalField(max_digits=20, decimal_places=2)
+    initial_balance = models.FloatField()
     account_type = models.ForeignKey(AccountType, on_delete=models.CASCADE, related_name='accounts')
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='accounts')
     active = models.BooleanField(default=True)
@@ -69,7 +69,7 @@ class Budget(models.Model):
     )
     month = models.DateField()
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='budgets')
-    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    amount = models.FloatField()
 
     def __str__(self):
         return self.name
@@ -93,7 +93,7 @@ class TransactionEntry(models.Model):
     to_account = models.ForeignKey(Account, on_delete=models.CASCADE,
                                    null=True, related_name='transaction_entries_to')
     description = models.CharField(max_length=140, null=True)
-    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    amount = models.FloatField()
     conciliated = models.BooleanField(default=False)
 
     def get_last_pk(self):
@@ -101,6 +101,9 @@ class TransactionEntry(models.Model):
 
     def get_transaction_id(self):
         pass
+
+    def negative_amount(self):
+        return -self.amount
 
     class Meta:
         verbose_name_plural = 'Transaction Entries'
@@ -113,7 +116,7 @@ class BudgetEntry(models.Model):
     month = models.DateField()
     account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name='budget_entries')
     notes = models.CharField(max_length=140, null=True)
-    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    amount = models.FloatField()
 
     class Meta:
         verbose_name_plural = 'Budget Entries'
