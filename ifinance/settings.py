@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'main',
     'ifinance',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [

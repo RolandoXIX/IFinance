@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.functions import Coalesce
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.utils.datetime_safe import datetime
 from django.views.generic.base import View
@@ -8,6 +8,7 @@ from main.forms import TransactionForm, AccountForm
 from main.models import Account, TransactionEntry
 from django.db.models import Sum, Q
 import datetime
+from django.urls import reverse
 
 
 class AccountsMixin:
@@ -67,7 +68,7 @@ class CrudTransaction(View, AccountsMixin):
         except ObjectDoesNotExist:
             form = TransactionForm(request.POST)
         context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
-        redirect = '{}{}{}'.format('/transactions/', account, '/')
+        redirect = reverse('transactions_account', kwargs={'account': account})
 
         if form.is_valid():
             form.save()
@@ -83,7 +84,7 @@ class CrudAccount(View, AccountsMixin):
             form = AccountForm(instance=Account.objects.get(pk=pk))
         except ObjectDoesNotExist:
             form = AccountForm()
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form}
+        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
         return render(request, 'main/add_transaction.html', context)
 
     def post(self, request, pk=None):
@@ -92,8 +93,8 @@ class CrudAccount(View, AccountsMixin):
             form = AccountForm(request.POST, instance=Account.objects.get(pk=pk))
         except ObjectDoesNotExist:
             form = AccountForm(request.POST)
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form}
-        redirect = '{}{}{}'.format('/transactions/', Account.objects.order_by('-pk')[0].pk, '/')
+        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
+        redirect = reverse('transactions_account', kwargs={'account': Account.objects.order_by('-pk')[0].pk})
 
         if form.is_valid():
             form.save()

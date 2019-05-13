@@ -1,4 +1,5 @@
 {% extends 'main/base.html' %}
+{% load humanize %}
 
 {% block content %}
 
@@ -17,8 +18,8 @@
               <th scope="col" style="width: 20%">Category / Account</th>
               <th scope="col" style="width: 30%">Description</th>
               <th scope="col" style="width: 3%"><span class="oi oi-transfer"></span></th>
-              <th scope="col" style="width: 15%">Amount</th>
-              <th scope="col" style="width: 5%">Actions</th>
+              <th scope="col" class="text-right" style="width: 5%">Amount</th>
+              <th scope="col" class="text-right" style="width: 5%">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -48,11 +49,11 @@
               {% endif %}
 
               {% if transaction.to_account.pk == active.pk %}
-              <td>{{ transaction.amount|floatformat:2}}</td>
+              <td align="right">{{ transaction.amount|floatformat:2|intcomma}}</td>
               {% else %}
-              <td>{{ transaction.negative_amount|floatformat:2}}</td>
+              <td align="right">{{ transaction.negative_amount|floatformat:2|intcomma}}</td>
               {% endif %}
-              <td>&nbsp<a href="/transactions/{{ transaction.from_account.pk }}/{{ transaction.pk }}/edit">
+              <td align="right">&nbsp<a href="{% url 'edit_transaction' transaction.from_account.pk transaction.pk %}">
                 <span class="oi oi-eye">&nbsp&nbsp</span></a><span class="oi oi-trash"></span>
               </td>
             </tr>
