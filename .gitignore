@@ -1,0 +1,17 @@
+*.pyc
+*.sqlite
+*.sqlite3
+*.orig
+
+
+newrelic.ini
+.project
+.pydevproject
+.settings
+
+*settings_local.py
+env/
+
+*.crt
+*.key
+*.lock
