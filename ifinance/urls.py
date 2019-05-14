@@ -24,7 +24,10 @@ urlpatterns = [
     path('transactions/', main_views.TransactionsListView.as_view(), name='transactions_account', kwargs={'account':None}),
     path('transactions/<int:account>/', main_views.TransactionsListView.as_view(), name='transactions_account'),
     path('transactions/<int:account>/add/', main_views.CrudTransaction.as_view(), name='add_transaction'),
-    path('transactions/<int:account>/<int:pk>/edit/', main_views.CrudTransaction.as_view(), name='edit_transaction'),
+    path('transactions/<int:account>/<int:pk>/edit/', main_views.CrudTransaction.as_view(),
+         name='edit_transaction', kwargs={'action': 'edit'}),
+    path('transactions/<int:account>/<int:pk>/delete/', main_views.CrudTransaction.as_view(),
+         name='delete_transaction', kwargs={'action': 'delete'}),
     path('account/add/', main_views.CrudAccount.as_view(), name='add_account'),
     path('account/<int:pk>/edit/', main_views.CrudAccount.as_view(), name='edit_account'),
 ]

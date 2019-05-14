@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.functions import Coalesce
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.utils.datetime_safe import datetime
 from django.views.generic.base import View
@@ -53,33 +53,46 @@ class TransactionsListView(View, AccountsMixin):
 
 class CrudTransaction(View, AccountsMixin):
 
-    def get(self, request, pk=None, account=0):
-        try:
-            form = TransactionForm(instance=TransactionEntry.objects.get(pk=pk))
-        except ObjectDoesNotExist:
+    def get(self, request, pk=None, account=None, action=None):
+
+        if action == 'edit':
+            instance = get_object_or_404(TransactionEntry, pk=pk)
+            form = TransactionForm(instance=instance)
+        else:
             form = TransactionForm(initial={'date': datetime.date.today(), 'from_account': account})
         context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
-        return render(request, 'main/add_transaction.html', context)
-
-    def post(self, request, pk=None, account=0):
-
-        try:
-            form = TransactionForm(request.POST, instance=TransactionEntry.objects.get(pk=pk))
-        except ObjectDoesNotExist:
-            form = TransactionForm(request.POST)
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
-        redirect = reverse('transactions_account', kwargs={'account': account})
-
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(redirect)
+        if action == 'delete':
+            get_object_or_404(TransactionEntry, pk=pk)
+            return render(request, 'main/delete_transaction.html', context)
         else:
             return render(request, 'main/add_transaction.html', context)
+
+    def post(self, request, pk=None, account=0, action=None):
+
+        redirect = reverse('transactions_account', kwargs={'account': account})
+
+        if action == 'delete':
+            transaction = TransactionEntry.objects.get(pk=pk)
+            transaction.delete()
+            return HttpResponseRedirect(redirect)
+        else:
+            try:
+                form = TransactionForm(request.POST, instance=TransactionEntry.objects.get(pk=pk))
+            except ObjectDoesNotExist:
+                form = TransactionForm(request.POST)
+            context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
+
+            if form.is_valid():
+                form.save()
+                return HttpResponseRedirect(redirect)
+            else:
+                return render(request, 'main/add_transaction.html', context)
 
 
 class CrudAccount(View, AccountsMixin):
 
     def get(self, request, pk=None):
+
         try:
             form = AccountForm(instance=Account.objects.get(pk=pk))
         except ObjectDoesNotExist:
