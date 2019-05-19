@@ -87,10 +87,17 @@ class Command(BaseCommand):
         investments.save()
 
         peso = Currency(
-            name='peso',
+            name='Peso',
             cod='ARS',
         )
         peso.save()
+
+        manual_adjustment = Account(
+            name='Manual adjustment',
+            description='For adjustments',
+            initial_balance=0, account_type=special, currency=peso, active=True,
+        )
+        manual_adjustment.save()
 
         wallet = Account(
             name='Wallet',
@@ -99,12 +106,34 @@ class Command(BaseCommand):
         )
         wallet.save()
 
+        transaction = TransactionEntry(
+            date=datetime.date.today(),
+            entry_type='T',
+            from_account=manual_adjustment,
+            to_account=wallet,
+            description='Update balance',
+            amount=2000,
+            conciliated=True,
+        )
+        transaction.save()
+
         bank_of_america = Account(
             name='Bank American',
             description='Money in bank',
             initial_balance=10000, account_type=bank, currency=peso, active=True,
         )
         bank_of_america.save()
+
+        transaction = TransactionEntry(
+            date=datetime.date.today(),
+            entry_type='T',
+            from_account=manual_adjustment,
+            to_account=bank_of_america,
+            description='Update balance',
+            amount=10000,
+            conciliated=True,
+        )
+        transaction.save()
 
         market = Account(
             name='Market',

@@ -53,8 +53,8 @@
               {% else %}
               <td align="right">{{ transaction.negative_amount|floatformat:2|intcomma}}</td>
               {% endif %}
-              <td align="right">&nbsp<a href="{% url 'edit_transaction' transaction.from_account.pk transaction.pk %}">
-                <span class="oi oi-eye">&nbsp&nbsp</span></a><a href="{% url 'delete_transaction' transaction.from_account.pk transaction.pk %}"><span class="oi oi-trash"></span></a>
+              <td align="right">&nbsp<a href="{% url 'edit_transaction' active.pk transaction.pk %}">
+                <span class="oi oi-eye">&nbsp&nbsp</span></a><a href="{% url 'delete_transaction' active.pk transaction.pk %}"><span class="oi oi-trash"></span></a>
               </td>
             </tr>
             {% endfor %}

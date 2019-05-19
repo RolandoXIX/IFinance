@@ -37,6 +37,9 @@ class Currency(models.Model):
     class Meta:
         verbose_name_plural = 'Currencies'
 
+    def __str__(self):
+        return self.name
+
 
 class Account(models.Model):
 
@@ -96,17 +99,12 @@ class TransactionEntry(models.Model):
     amount = models.FloatField()
     conciliated = models.BooleanField(default=False)
 
-    def get_last_pk(self):
-        pass
-
-    def get_transaction_id(self):
-        pass
-
     def negative_amount(self):
         return -self.amount
 
     class Meta:
         verbose_name_plural = 'Transaction Entries'
+        ordering = ['-pk']
 
 
 class BudgetEntry(models.Model):

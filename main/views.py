@@ -4,7 +4,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.utils.datetime_safe import datetime
 from django.views.generic.base import View
-from main.forms import TransactionForm, AccountForm
+from main.forms import TransactionForm, AccountCreateForm, AccountEditForm
 from main.models import Account, TransactionEntry
 from django.db.models import Sum, Q
 import datetime
@@ -16,16 +16,18 @@ class AccountsMixin:
     def get_pay_account_list(self):
         return Account.objects.filter(account_type__type_group__in=['BU', 'CR', 'TR'])
 
+    def get_balance(self, account):
+        from_account_sum = TransactionEntry.objects.filter(from_account=account).aggregate(
+            fsum=Coalesce(Sum('amount'), 0))
+        to_account_sum = TransactionEntry.objects.filter(to_account=account).aggregate(
+            tsum=Coalesce(Sum('amount'), 0))
+        balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
+        return balance_account
+
     def get_account_and_balance(self):
         account_and_balance = []
         for pay_account in self.get_pay_account_list():
-            from_account_sum = TransactionEntry.objects.filter(from_account=pay_account).aggregate(
-                fsum=Coalesce(Sum('amount'), 0))
-            to_account_sum = TransactionEntry.objects.filter(to_account=pay_account).aggregate(
-                tsum=Coalesce(Sum('amount'), 0))
-            balance_account = '{:,.2f}'.format(to_account_sum['tsum'] -
-                                               from_account_sum['fsum'] +
-                                               pay_account.initial_balance)
+            balance_account = self.get_balance(pay_account)
             account_and_balance.append((pay_account, balance_account))
         return account_and_balance
 
@@ -36,11 +38,27 @@ class AccountsMixin:
             active = {'name': 'All accounts', 'pk': 0}  # in order to use active.name and active.pk in template.
         return active
 
+    def update_balance(self, account, initial_balance):
+        actual_balance = self.get_balance(account)
+        adjust = initial_balance - actual_balance
+        if adjust:
+            transaction = TransactionEntry(
+                date=datetime.date.today(),
+                entry_type='T',
+                from_account=Account.objects.get(name='Manual adjustment'),
+                to_account=account,
+                description='Update balance',
+                amount=adjust,
+                conciliated=True,
+            )
+            transaction.save()
+
 
 class TransactionsListView(View, AccountsMixin):
 
     def get(self, request, account=None):
         if account:
+            get_object_or_404(Account, pk=account)
             transactions_list = TransactionEntry.objects.filter(Q(from_account=account) | Q(to_account=account))
         else:
             transactions_list = TransactionEntry.objects.all
@@ -51,66 +69,91 @@ class TransactionsListView(View, AccountsMixin):
         return render(request, 'main/transactions_list.html', context)
 
 
-class CrudTransaction(View, AccountsMixin):
+class CreateEditTransaction(View, AccountsMixin):
 
-    def get(self, request, pk=None, account=None, action=None):
+    def get(self, request, pk=None, account=None):
 
-        if action == 'edit':
+        if pk:
             instance = get_object_or_404(TransactionEntry, pk=pk)
             form = TransactionForm(instance=instance)
         else:
             form = TransactionForm(initial={'date': datetime.date.today(), 'from_account': account})
         context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
-        if action == 'delete':
-            get_object_or_404(TransactionEntry, pk=pk)
-            return render(request, 'main/delete_transaction.html', context)
-        else:
-            return render(request, 'main/add_transaction.html', context)
+        return render(request, 'main/create_edit.html', context)
 
-    def post(self, request, pk=None, account=0, action=None):
+    def post(self, request, pk=None, account=0):
 
         redirect = reverse('transactions_account', kwargs={'account': account})
 
-        if action == 'delete':
-            transaction = TransactionEntry.objects.get(pk=pk)
-            transaction.delete()
-            return HttpResponseRedirect(redirect)
-        else:
-            try:
-                form = TransactionForm(request.POST, instance=TransactionEntry.objects.get(pk=pk))
-            except ObjectDoesNotExist:
-                form = TransactionForm(request.POST)
-            context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
-
-            if form.is_valid():
-                form.save()
-                return HttpResponseRedirect(redirect)
-            else:
-                return render(request, 'main/add_transaction.html', context)
-
-
-class CrudAccount(View, AccountsMixin):
-
-    def get(self, request, pk=None):
-
         try:
-            form = AccountForm(instance=Account.objects.get(pk=pk))
+            form = TransactionForm(request.POST, instance=TransactionEntry.objects.get(pk=pk))
         except ObjectDoesNotExist:
-            form = AccountForm()
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
-        return render(request, 'main/add_transaction.html', context)
-
-    def post(self, request, pk=None):
-
-        try:
-            form = AccountForm(request.POST, instance=Account.objects.get(pk=pk))
-        except ObjectDoesNotExist:
-            form = AccountForm(request.POST)
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
-        redirect = reverse('transactions_account', kwargs={'account': Account.objects.order_by('-pk')[0].pk})
+            form = TransactionForm(request.POST)
+        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
 
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(redirect)
         else:
-            return render(request, 'main/add_transaction.html', context)
+            return render(request, 'main/create_edit.html', context)
+
+
+class DeleteTransaction(View, AccountsMixin):
+
+    def get(self, request, pk=None, account=None):
+
+        get_object_or_404(TransactionEntry, pk=pk)
+        context = {'accounts_list': self.get_account_and_balance(), 'active': self.get_active_account(account)}
+        return render(request, 'main/delete.html', context)
+
+    def post(self, request, pk=None, account=0):
+
+        redirect = reverse('transactions_account', kwargs={'account': account})
+        transaction = TransactionEntry.objects.get(pk=pk)
+        transaction.delete()
+        return HttpResponseRedirect(redirect)
+
+
+class CreateEditAccount(View, AccountsMixin):
+
+    def get(self, request, pk=None):
+
+        if pk:
+            instance = get_object_or_404(Account, pk=pk)
+            form = AccountEditForm(instance=instance)
+        else:
+            form = AccountCreateForm()
+        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
+        return render(request, 'main/create_edit.html', context)
+
+    def post(self, request, pk=None):
+
+        try:
+            form = AccountEditForm(request.POST, instance=Account.objects.get(pk=pk))
+        except ObjectDoesNotExist:
+            form = AccountCreateForm(request.POST)
+        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
+
+        if form.is_valid():
+            new_account = form.save()
+            self.update_balance(new_account, new_account.initial_balance)
+            redirect = reverse('transactions_account', kwargs={'account': new_account.pk})
+            return HttpResponseRedirect(redirect)
+        else:
+            return render(request, 'main/create_edit.html', context)
+
+
+class DeleteAccount(View, AccountsMixin):
+
+    def get(self, request, pk=None):
+
+        get_object_or_404(Account, pk=pk)
+        context = {'accounts_list': self.get_account_and_balance(), 'active': self.get_active_account(pk)}
+        return render(request, 'main/delete.html', context)
+
+    def post(self, request, pk=None):
+
+        account = Account.objects.get(pk=pk)
+        account.delete()
+        return HttpResponseRedirect(reverse('main_home'))
+
