@@ -22,7 +22,7 @@ class AccountCreateForm(ModelForm):
 
     class Meta:
         model = Account
-        fields = ['name', 'description', 'initial_balance', 'account_type', 'currency']
+        fields = ['name', 'description', 'actual_balance', 'account_type', 'currency']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -35,7 +35,7 @@ class AccountEditForm(ModelForm):
 
     class Meta:
         model = Account
-        fields = ['name', 'description', 'initial_balance']
+        fields = ['name', 'description', 'actual_balance']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -95,14 +95,14 @@ class Command(BaseCommand):
         manual_adjustment = Account(
             name='Manual adjustment',
             description='For adjustments',
-            initial_balance=0, account_type=special, currency=peso, active=True,
+            actual_balance=0, account_type=special, currency=peso, active=True,
         )
         manual_adjustment.save()
 
         wallet = Account(
             name='Wallet',
             description='Cash on hand',
-            initial_balance=1000, account_type=cash, currency=peso, active=True,
+            actual_balance=1000, account_type=cash, currency=peso, active=True,
         )
         wallet.save()
 
@@ -112,7 +112,7 @@ class Command(BaseCommand):
             from_account=manual_adjustment,
             to_account=wallet,
             description='Update balance',
-            amount=2000,
+            amount=1000,
             conciliated=True,
         )
         transaction.save()
@@ -120,7 +120,7 @@ class Command(BaseCommand):
         bank_of_america = Account(
             name='Bank American',
             description='Money in bank',
-            initial_balance=10000, account_type=bank, currency=peso, active=True,
+            actual_balance=10000, account_type=bank, currency=peso, active=True,
         )
         bank_of_america.save()
 
@@ -138,14 +138,14 @@ class Command(BaseCommand):
         market = Account(
             name='Market',
             description='Market Expenses',
-            initial_balance=0, account_type=outflow, currency=peso, active=True,
+            actual_balance=0, account_type=outflow, currency=peso, active=True,
         )
         market.save()
 
         salary = Account(
             name='Salary',
             description='Salary',
-            initial_balance=0, account_type=inflow, currency=peso, active=True,
+            actual_balance=0, account_type=inflow, currency=peso, active=True,
         )
         salary.save()
 

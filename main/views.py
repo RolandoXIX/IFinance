@@ -38,9 +38,9 @@ class AccountsMixin:
             active = {'name': 'All accounts', 'pk': 0}  # in order to use active.name and active.pk in template.
         return active
 
-    def update_balance(self, account, initial_balance):
+    def update_balance(self, account):
         actual_balance = self.get_balance(account)
-        adjust = initial_balance - actual_balance
+        adjust = account.actual_balance - actual_balance
         if adjust:
             transaction = TransactionEntry(
                 date=datetime.date.today(),
@@ -120,23 +120,25 @@ class CreateEditAccount(View, AccountsMixin):
 
         if pk:
             instance = get_object_or_404(Account, pk=pk)
+            instance.actual_balance = self.get_balance(instance)
             form = AccountEditForm(instance=instance)
         else:
             form = AccountCreateForm()
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
+        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(pk)}
         return render(request, 'main/create_edit.html', context)
 
     def post(self, request, pk=None):
 
         try:
-            form = AccountEditForm(request.POST, instance=Account.objects.get(pk=pk))
+            instance = Account.objects.get(pk=pk)
+            form = AccountEditForm(request.POST, instance=instance)
         except ObjectDoesNotExist:
             form = AccountCreateForm(request.POST)
         context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
 
         if form.is_valid():
             new_account = form.save()
-            self.update_balance(new_account, new_account.initial_balance)
+            self.update_balance(new_account)
             redirect = reverse('transactions_account', kwargs={'account': new_account.pk})
             return HttpResponseRedirect(redirect)
         else:
