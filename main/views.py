@@ -76,7 +76,7 @@ class CreateEditTransaction(View, AccountsMixin):
             instance = get_object_or_404(TransactionEntry, pk=pk)
             form = TransactionForm(instance=instance)
         else:
-            form = TransactionForm(initial={'date': datetime.date.today(), 'from_account': account})
+            form = TransactionForm(initial={'date': datetime.date.today(), 'from_account': account, 'entry_type': 'T'})
         context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
         return render(request, 'main/create_edit.html', context)
 
