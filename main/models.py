@@ -95,7 +95,7 @@ class TransactionEntry(models.Model):
                                      null=True, related_name='transaction_entries_from')
     to_account = models.ForeignKey(Account, on_delete=models.CASCADE,
                                    null=True, related_name='transaction_entries_to')
-    description = models.CharField(max_length=140, null=True)
+    description = models.CharField(max_length=140, null=True, blank=True)
     amount = models.FloatField()
     conciliated = models.BooleanField(default=False)
 

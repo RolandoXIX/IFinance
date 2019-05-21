@@ -53,7 +53,7 @@ class AccountsMixin:
             transaction.save()
 
 
-class TransactionsListView(View, AccountsMixin):
+class TransactionsListDelete(View, AccountsMixin):
 
     def get(self, request, account=None):
         if account:
@@ -66,6 +66,13 @@ class TransactionsListView(View, AccountsMixin):
             'active': self.get_active_account(account), 'pay_accounts': self.get_pay_account_list(),
         }
         return render(request, 'main/transactions_list.html', context)
+
+    def post(self, request, account=0):
+
+        redirect = reverse('transactions', kwargs={'account': account})
+        transactions = TransactionEntry.objects.filter(id__in=request.POST.getlist('id'))
+        transactions.delete()
+        return HttpResponseRedirect(redirect)
 
 
 class CreateEditTransaction(View, AccountsMixin):
@@ -82,7 +89,7 @@ class CreateEditTransaction(View, AccountsMixin):
 
     def post(self, request, pk=None, account=0):
 
-        redirect = reverse('transactions_account', kwargs={'account': account})
+        redirect = reverse('transactions', kwargs={'account': account})
 
         try:
             form = TransactionForm(request.POST, instance=TransactionEntry.objects.get(pk=pk))
@@ -95,25 +102,6 @@ class CreateEditTransaction(View, AccountsMixin):
             return HttpResponseRedirect(redirect)
         else:
             return render(request, 'main/create_edit.html', context)
-
-
-class DeleteTransaction(View, AccountsMixin):
-
-    def get(self, request, pk=None, account=None):
-
-        get_object_or_404(TransactionEntry, pk=pk)
-        context = {'accounts_list': self.get_account_and_balance(), 'active': self.get_active_account(account)}
-        return render(request, 'main/delete.html', context)
-
-    def post(self, request, pk=None, account=0):
-
-        redirect = reverse('transactions_account', kwargs={'account': account})
-        try:
-            transactions = TransactionEntry.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            transactions = TransactionEntry.objects.filter(id__in=request.POST.getlist('id'))
-        transactions.delete()
-        return HttpResponseRedirect(redirect)
 
 
 class CreateEditAccount(View, AccountsMixin):
@@ -141,7 +129,7 @@ class CreateEditAccount(View, AccountsMixin):
         if form.is_valid():
             new_account = form.save()
             self.update_balance(new_account)
-            redirect = reverse('transactions_account', kwargs={'account': new_account.pk})
+            redirect = reverse('transactions', kwargs={'account': new_account.pk})
             return HttpResponseRedirect(redirect)
         else:
             return render(request, 'main/create_edit.html', context)

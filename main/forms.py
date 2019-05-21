@@ -18,7 +18,7 @@ class TransactionForm(ModelForm):
             Q(account_type__transaction_allowed=True) & Q(account_type__type_group__in=['BU', 'CR', 'TR'])
         )
         self.fields['to_account'].queryset = Account.objects.filter(
-            Q(account_type__transaction_allowed=True) & ~Q(account_type__name='special')
+            Q(account_type__transaction_allowed=True) & ~Q(account_type__name='Special')
         )
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
