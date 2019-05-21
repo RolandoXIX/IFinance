@@ -11,6 +11,7 @@ urlpatterns = [
     path('transactions/<int:account>/add/', main_views.CreateEditTransaction.as_view(), name='add_transaction'),
     path('transactions/<int:account>/<int:pk>/edit/', main_views.CreateEditTransaction.as_view(), name='edit_transaction'),
     path('transactions/<int:account>/<int:pk>/delete/', main_views.DeleteTransaction.as_view(), name='delete_transaction'),
+    path('transactions/<int:account>/delete/', main_views.DeleteTransaction.as_view(), name='bulk_delete'),
     path('account/add/', main_views.CreateEditAccount.as_view(), name='add_account'),
     path('account/<int:pk>/edit/', main_views.CreateEditAccount.as_view(), name='edit_account'),
     path('account/<int:pk>/delete/', main_views.DeleteAccount.as_view(), name='delete_account'),

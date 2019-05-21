@@ -39,8 +39,7 @@ class AccountsMixin:
         return active
 
     def update_balance(self, account):
-        actual_balance = self.get_balance(account)
-        adjust = account.actual_balance - actual_balance
+        adjust = account.actual_balance - self.get_balance(account)
         if adjust:
             transaction = TransactionEntry(
                 date=datetime.date.today(),
@@ -109,8 +108,11 @@ class DeleteTransaction(View, AccountsMixin):
     def post(self, request, pk=None, account=0):
 
         redirect = reverse('transactions_account', kwargs={'account': account})
-        transaction = TransactionEntry.objects.get(pk=pk)
-        transaction.delete()
+        try:
+            transactions = TransactionEntry.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            transactions = TransactionEntry.objects.filter(id__in=request.POST.getlist('id'))
+        transactions.delete()
         return HttpResponseRedirect(redirect)
 
 
@@ -158,4 +160,3 @@ class DeleteAccount(View, AccountsMixin):
         account = Account.objects.get(pk=pk)
         account.delete()
         return HttpResponseRedirect(reverse('main_home'))
-
