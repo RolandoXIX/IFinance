@@ -9,7 +9,7 @@
         <table class="table table-hover table-sm">
           <thead>
             <tr>
-              <th class="bs-checkbox" style="width: 3%"><input data-index="0" name="btSelectItem" type="checkbox"></th>
+              <th class="bs-checkbox" style="width: 3%"><input data-index="0" name="btSelectItem" type="checkbox" id="select_all"></th>
               <th scope="col" style="width: 8%">Date</th>
 
               {% if active.pk == 0 %}
@@ -26,7 +26,7 @@
           <tbody>
             {% for transaction in transactions_list %}
             <tr>
-              <td class="bs-checkbox "><input data-index="0" name="id" value="{{ transaction.id }}" type="checkbox"></td>
+              <td class="bs-checkbox"><input data-index="0" name="id" value="{{ transaction.id }}" type="checkbox"></td>
               <td>{{ transaction.date|date:"SHORT_DATE_FORMAT" }}</td>
 
               {% if active.pk == 0 %}
@@ -68,9 +68,11 @@
 {% endblock %}
 
 {% block js %}
+
 <script>
   $(function() {
     $('body').delegate('#delete', 'click', function() {
+    if (confirm("Are you sure?")) {
       $.ajax({
         type: "POST",
         url: '{% url 'transactions' active.pk %}',
@@ -79,5 +81,14 @@
       location.reload()
     })
   })
+  })
 </script>
+
+<script>
+  $('#select_all').click(function() {
+    var c = this.checked;
+    $('[type=checkbox]').prop('checked',c);
+  });
+</script>
+
 {% endblock %}
