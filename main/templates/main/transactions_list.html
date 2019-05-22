@@ -70,18 +70,18 @@
 {% block js %}
 
 <script>
-  $(function() {
-    $('.delete').click(function() {
-      if(confirm("Are you sure?")) {
-      $.ajax({
-        type: "POST",
-        url: '{% url 'transactions' active.pk %}',
-        data: { id: $(this).attr('name'), csrfmiddlewaretoken: '{{ csrf_token }}' }
-      });
-      location.reload()
-      };
-     });
-     })
+$(function() {
+  $('.delete').click(function() {
+	  if(confirm("Are you sure?")) {
+		  $.ajax({
+			  type: "POST",
+			  url: '{% url 'transactions' active.pk %}',
+			  data: { id: $(this).attr('name'), csrfmiddlewaretoken: '{{ csrf_token }}' }
+		  });
+	  };
+	  window.location.reload(true);
+  });
+})
 </script>
 
 <script>

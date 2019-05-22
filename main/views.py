@@ -24,12 +24,6 @@ class AccountsMixin:
         balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
         return balance_account
 
-    def get_account_and_balance(self):
-        account_and_balance = []
-        for pay_account in self.get_pay_account_list():
-            balance_account = self.get_balance(pay_account)
-            account_and_balance.append((pay_account, balance_account))
-        return account_and_balance
 
     def get_active_account(self, pk):
         try:
@@ -38,7 +32,7 @@ class AccountsMixin:
             active = {'name': 'All accounts', 'pk': 0}  # in order to use active.name and active.pk in template.
         return active
 
-    def update_balance(self, account):
+    def adjust_balance(self, account):
         adjust = account.actual_balance - self.get_balance(account)
         if adjust:
             transaction = TransactionEntry(
@@ -52,8 +46,15 @@ class AccountsMixin:
             )
             transaction.save()
 
+    def update_balance(self):
 
-class TransactionsListDelete(View, AccountsMixin):
+        for account in self.get_pay_account_list():
+            instance = Account.objects.get(pk=account.pk)
+            instance.actual_balance = self.get_balance(account)
+            instance.save()
+
+
+class ListDeleteTransactions(View, AccountsMixin):
 
     def get(self, request, account=None):
         if account:
@@ -62,7 +63,7 @@ class TransactionsListDelete(View, AccountsMixin):
         else:
             transactions_list = TransactionEntry.objects.all
         context = {
-            'accounts_list': self.get_account_and_balance(), 'transactions_list': transactions_list,
+            'accounts_list': self.get_pay_account_list(), 'transactions_list': transactions_list,
             'active': self.get_active_account(account), 'pay_accounts': self.get_pay_account_list(),
         }
         return render(request, 'main/transactions_list.html', context)
@@ -72,6 +73,7 @@ class TransactionsListDelete(View, AccountsMixin):
         redirect = reverse('transactions', kwargs={'account': account})
         transactions = TransactionEntry.objects.filter(id__in=request.POST.getlist('id'))
         transactions.delete()
+        self.update_balance()
         return HttpResponseRedirect(redirect)
 
 
@@ -84,7 +86,7 @@ class CreateEditTransaction(View, AccountsMixin):
             form = TransactionForm(instance=instance)
         else:
             form = TransactionForm(initial={'date': datetime.date.today(), 'from_account': account, 'entry_type': 'T'})
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
+        context = {'accounts_list': self.get_pay_account_list(), 'form': form, 'active': self.get_active_account(account)}
         return render(request, 'main/create_edit.html', context)
 
     def post(self, request, pk=None, account=0):
@@ -95,10 +97,11 @@ class CreateEditTransaction(View, AccountsMixin):
             form = TransactionForm(request.POST, instance=TransactionEntry.objects.get(pk=pk))
         except ObjectDoesNotExist:
             form = TransactionForm(request.POST)
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(account)}
+        context = {'accounts_list': self.get_pay_account_list(), 'form': form, 'active': self.get_active_account(account)}
 
         if form.is_valid():
             form.save()
+            self.update_balance()
             return HttpResponseRedirect(redirect)
         else:
             return render(request, 'main/create_edit.html', context)
@@ -106,29 +109,29 @@ class CreateEditTransaction(View, AccountsMixin):
 
 class CreateEditAccount(View, AccountsMixin):
 
-    def get(self, request, pk=None):
+    def get(self, request, account=None):
 
-        if pk:
-            instance = get_object_or_404(Account, pk=pk)
+        if account:
+            instance = get_object_or_404(Account, pk=account)
             instance.actual_balance = self.get_balance(instance)
             form = AccountEditForm(instance=instance)
         else:
             form = AccountCreateForm()
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(pk)}
+        context = {'accounts_list': self.get_pay_account_list(), 'form': form, 'active': self.get_active_account(account)}
         return render(request, 'main/create_edit.html', context)
 
-    def post(self, request, pk=None):
+    def post(self, request, account=None):
 
         try:
-            instance = Account.objects.get(pk=pk)
+            instance = Account.objects.get(pk=account)
             form = AccountEditForm(request.POST, instance=instance)
         except ObjectDoesNotExist:
             form = AccountCreateForm(request.POST)
-        context = {'accounts_list': self.get_account_and_balance(), 'form': form, 'active': self.get_active_account(None)}
+        context = {'accounts_list': self.get_pay_account_list(), 'form': form, 'active': self.get_active_account(None)}
 
         if form.is_valid():
             new_account = form.save()
-            self.update_balance(new_account)
+            self.adjust_balance(new_account)
             redirect = reverse('transactions', kwargs={'account': new_account.pk})
             return HttpResponseRedirect(redirect)
         else:
@@ -137,14 +140,15 @@ class CreateEditAccount(View, AccountsMixin):
 
 class DeleteAccount(View, AccountsMixin):
 
-    def get(self, request, pk=None):
+    def get(self, request, account=None):
 
-        get_object_or_404(Account, pk=pk)
-        context = {'accounts_list': self.get_account_and_balance(), 'active': self.get_active_account(pk)}
+        get_object_or_404(Account, pk=account)
+        context = {'accounts_list': self.get_pay_account_list(), 'active': self.get_active_account(account)}
         return render(request, 'main/delete.html', context)
 
-    def post(self, request, pk=None):
+    def post(self, request, account=None):
 
-        account = Account.objects.get(pk=pk)
-        account.delete()
+        instance = Account.objects.get(pk=account)
+        instance.delete()
+        self.update_balance()
         return HttpResponseRedirect(reverse('main_home'))
