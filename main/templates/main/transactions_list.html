@@ -71,17 +71,20 @@
 
 <script>
 $(function() {
-  $('.delete').click(function() {
+  $('.delete').click(function(e) {
+    e.preventDefault();
 	  if(confirm("Are you sure?")) {
 		  $.ajax({
 			  type: "POST",
 			  url: '{% url 'transactions' active.pk %}',
-			  data: { id: $(this).attr('name'), csrfmiddlewaretoken: '{{ csrf_token }}' }
+			  data: { id: $(this).attr('name'), csrfmiddlewaretoken: '{{ csrf_token }}' },
+        success: function() {
+          location.reload(true);
+        }
 		  });
 	  };
-	  window.location.reload(true);
   });
-})
+});
 </script>
 
 <script>
@@ -91,4 +94,4 @@ $(function() {
   });
 </script>
 
-{% endblock %}
+{% endblock js %}
