@@ -24,7 +24,6 @@ class AccountsMixin:
         balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
         return balance_account
 
-
     def get_active_account(self, pk):
         try:
             active = Account.objects.get(pk=pk)
@@ -53,6 +52,15 @@ class AccountsMixin:
             instance.actual_balance = self.get_balance(account)
             instance.save()
 
+    def get_type_group_balance(self):
+        
+        types_and_balance = []
+        for type in ['BU', 'CR', 'TR']:
+            balance = Account.objects.filter(
+                account_type__type_group=type
+                ).aggregate(tsum=Coalesce(Sum('actual_balance'), 0))['tsum']
+            types_and_balance.append((type, balance))
+
 
 class ListDeleteTransactions(View, AccountsMixin):
 
@@ -64,7 +72,7 @@ class ListDeleteTransactions(View, AccountsMixin):
             transactions_list = TransactionEntry.objects.all
         context = {
             'accounts_list': self.get_pay_account_list(), 'transactions_list': transactions_list,
-            'active': self.get_active_account(account), 'pay_accounts': self.get_pay_account_list(),
+            'active': self.get_active_account(account), 
         }
         return render(request, 'main/transactions_list.html', context)
 

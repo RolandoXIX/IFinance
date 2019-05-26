@@ -6,7 +6,7 @@
 <div class="container-fluid table" style="line-height: 0.8; font-size:80%;">
     <form action="{% url 'transactions' active.pk %}" method="post" onsubmit="return confirm('Are you sure?')">
         {% csrf_token %}
-        <table class="table table-hover table-sm">
+        <table id="transactions" class="table table-hover table-sm">
           <thead>
             <tr>
               <th class="bs-checkbox" style="width: 3%"><input data-index="0" name="btSelectItem" type="checkbox" id="select_all"></th>
@@ -89,6 +89,17 @@
     var c = this.checked;
     $('[type=checkbox]').prop('checked',c);
   });
+</script>
+
+<script>
+$(document).ready(function(){
+  $("#search").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#transactions tbody tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+  });
+});
 </script>
 
 {% endblock js %}
