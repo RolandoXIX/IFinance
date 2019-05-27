@@ -3,7 +3,7 @@
 
 {% block content %}
 
-<form method="post" id="add-transaction" class="form">
+<form method="post" id="add-transaction" class="form" data-to-account-url="{% url 'load_to_accounts' %}">
     {% csrf_token %}
     {% for field in form %}
     <div class="form-group row ml-2 mt-2">
@@ -26,8 +26,32 @@
 
 {% endblock %}
 
+{% block js %}
+
 <script>
     $(function() {
-        $("#id_date").focus();
+        if({{ active.pk }} == 0){
+            $("#id_from_account").focus();
+        } else {
+            $("#id_to_account").focus();
+        }
     });
 </script>
+
+<script>
+    $("#id_from_account").change(function () {
+      var url = $("#add-transaction").attr("data-to-account-url");
+      var fromaccountId = $(this).val();
+        $.ajax({
+            url: url,
+            data: {
+              'from_account': fromaccountId
+            },
+            success: function (data) {
+              $("#id_to_account").html(data);
+            }
+        });
+    });
+</script>
+
+{% endblock js %}

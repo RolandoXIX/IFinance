@@ -13,4 +13,5 @@ urlpatterns = [
     path('account/add/', main_views.CreateEditAccount.as_view(), name='add_account'),
     path('account/<int:account>/edit/', main_views.CreateEditAccount.as_view(), name='edit_account'),
     path('account/<int:account>/delete/', main_views.DeleteAccount.as_view(), name='delete_account'),
+    path('ajax/load-to-accounts/', main_views.LoadToAccounts.as_view(), name='load_to_accounts'),
 ]

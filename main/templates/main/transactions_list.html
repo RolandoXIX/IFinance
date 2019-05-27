@@ -41,9 +41,9 @@
 
               <td>{{ transaction.description }}</td>
 
-              {% if transaction.to_account in pay_accounts and transaction.from_account in pay_accounts %}
+              {% if transaction.to_account in accounts_list and transaction.from_account in accounts_list %}
               <td><span class="oi oi-transfer" style="color:blue"></span></td>
-              {% elif transaction.to_account in pay_accounts and transaction.amount > 0 %}
+              {% elif transaction.from_account in accounts_list and transaction.amount < 0 %}
               <td><span class="oi oi-arrow-left" style="color:green"></span></td>
               {% else %}
               <td><span class="oi oi-arrow-right" style="color:red"></span></td>
@@ -55,17 +55,39 @@
               <td align="right">{{ transaction.negative_amount|floatformat:2|intcomma}}</td>
               {% endif %}
               <td align="right">&nbsp<a href="{% url 'edit_transaction' active.pk transaction.pk %}">
-                <span class="oi oi-eye">&nbsp&nbsp</span></a><a href="javascript:// Delete" class="delete_transaction" ="delete" name="{{ transaction.pk }}"><span class="oi oi-trash"></span></a>
+                <span class="oi oi-eye">&nbsp&nbsp</span></a><a href="javascript:// Delete" class="delete_transaction" ="delete" name="{{ transaction.pk }}" style="color:red"><span class="oi oi-trash"></span></a>
               </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
-        <button type="submit" class="btn btn-primary">Delete Selection</button>
+        <button type="submit" class="btn btn-danger">Delete Selection</button>
     </form>
 </div>
 
 {% endblock %}
+
+{% block navbar %}
+  <li class="nav-item active">
+    <a class="nav-link" href="{% url 'add_transaction' account=active.pk %}">Add Transaction <span class="sr-only">(current)</span></a>
+  </li>
+  {% if active.pk != 0 %}
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      Account Options
+    </a>
+    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+      <a class="dropdown-item" href="{% url 'edit_account' active.pk %}">Edit Account</a>
+      <a class="dropdown-item" href="{% url 'delete_account' active.pk %}">Delete Account</a>
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="#">-</a>
+    </div>
+    {% endif %}
+  </li>
+  <li class="nav-item active">
+    <input id="search" class="form-control" type="text" placeholder="Search" aria-label="Search">
+  </li>
+{% endblock navbar %}
 
 {% block js %}
 

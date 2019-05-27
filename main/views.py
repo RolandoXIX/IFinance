@@ -32,13 +32,13 @@ class AccountsMixin:
         return active
 
     def adjust_balance(self, account):
-        adjust = account.actual_balance - self.get_balance(account)
+        adjust = self.get_balance(account) - account.actual_balance
         if adjust:
             transaction = TransactionEntry(
                 date=datetime.date.today(),
                 entry_type='T',
-                from_account=Account.objects.get(name='Manual adjustment'),
-                to_account=account,
+                from_account=account,
+                to_account=Account.objects.get(name='Manual adjustment'),
                 description='Update balance',
                 amount=adjust,
                 conciliated=True,
@@ -97,7 +97,7 @@ class CreateEditTransaction(View, AccountsMixin):
         context = {'accounts_list': self.get_pay_account_list(), 'form': form, 'active': self.get_active_account(account)}
         return render(request, 'main/create_edit.html', context)
 
-    def post(self, request, pk=None, account=0):
+    def post(self, request, pk=None, account=None):
 
         redirect = reverse('transactions', kwargs={'account': account})
 
@@ -114,6 +114,19 @@ class CreateEditTransaction(View, AccountsMixin):
         else:
             return render(request, 'main/create_edit.html', context)
 
+
+class LoadToAccounts(View):
+
+    def get(self, request):
+        id_from_account = request.GET.get('from_account')
+        from_account = Account.objects.get(pk=id_from_account)
+        if from_account.account_type.type_group == 'TR':
+            to_accounts = Account.objects.filter(
+                ~Q(pk=id_from_account) & Q(account_type__type_group__in=['BU', 'CR', 'TR'])
+                )
+        else:
+            to_accounts = Account.objects.exclude(pk=id_from_account)
+        return render(request, 'main/to_account_list_options.html', {'to_accounts': to_accounts})
 
 class CreateEditAccount(View, AccountsMixin):
 
