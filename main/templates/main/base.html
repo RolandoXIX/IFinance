@@ -23,6 +23,10 @@
       overflow-x: hidden;
     }
 
+    .dropdown-toggle::after {
+    display:none;
+    }
+
     #sidebar-wrapper {
       min-height: 100vh;
       margin-left: -15rem;
@@ -123,7 +127,7 @@
 
         <!-- Add account button -->
         <br>
-        <a class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light" href="{% url 'add_account' %}" >Add Account</a>
+        <a class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light" href="{% url 'add_account' %}" ><button type="button" class="btn btn-outline-secondary btn-sm">Add Account</button></a>
 
       </div>
     </div>
@@ -177,12 +181,6 @@
       $("#wrapper").toggleClass("toggled");
     });
   </script>
-
-<script>
-    $(function() {
-        $("#id_date").focus();
-    });
-</script>
 
     {% block js %}
     {% endblock js %}
