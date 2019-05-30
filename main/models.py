@@ -54,6 +54,14 @@ class Account(models.Model):
     def __str__(self):
         return self.name
 
+    def get_to_account_group(self):
+        if self.account_type.type_group in ['BU', 'CR', 'TR']:
+            return 'Transfer'
+        elif self.account_type.name == 'Outflow':
+            return 'Outflow'
+        elif self.account_type.name == 'Inflow':
+            return 'Inflow'
+
 
 class ClosingDate(models.Model):
 

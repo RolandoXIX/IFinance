@@ -30,6 +30,7 @@
 
 <script>
     $(function() {
+        $("#id_name").focus();
         if({{ active.pk }} == 0){
             $("#id_from_account").focus();
         } else {
@@ -40,18 +41,41 @@
 
 <script>
     $("#id_from_account").change(function () {
-      var url = $("#add-transaction").attr("data-to-account-url");
-      var fromaccountId = $(this).val();
+    var selection = $("#id_to_account").val()
+    var url = $("#add-transaction").attr("data-to-account-url");
+    var fromaccountId = $(this).val();
         $.ajax({
             url: url,
             data: {
               'from_account': fromaccountId
             },
             success: function (data) {
-              $("#id_to_account").html(data);
+                $("#id_to_account").html(data);
+                var values = $.map($("#id_to_account option") ,function(option) {
+                    return option.value;
+                    });
+                if (selection in values) {
+                    $("#id_to_account").val(selection)
+                }
             }
         });
     });
+</script>
+
+<script type="text/javascript">
+       $("#id_entry_type").change(function () {     
+        $('#id_to_account option').each(
+            function(){
+                var that = $(this),
+                    defn = that.attr('data-defn'),
+                    sel = that.closest('select'),
+                    optgroup = sel.find('optgroup.' + defn);
+                if (!optgroup.length) {
+                    $('<optgroup />', {'class' : defn, 'label' : defn}).appendTo(sel);
+                }
+                that.appendTo(sel.find('optgroup.' + defn));
+            });
+        });
 </script>
 
 {% endblock js %}

@@ -119,14 +119,8 @@ class LoadToAccounts(View):
 
     def get(self, request):
         id_from_account = request.GET.get('from_account')
-        from_account = Account.objects.get(pk=id_from_account)
-        if from_account.account_type.type_group == 'TR':
-            to_accounts = Account.objects.filter(
-                ~Q(pk=id_from_account) & Q(account_type__type_group__in=['BU', 'CR', 'TR'])
-                )
-        else:
-            to_accounts = Account.objects.exclude(pk=id_from_account)
-        return render(request, 'main/to_account_list_options.html', {'to_accounts': to_accounts})
+        form = TransactionForm(initial={'from_account': id_from_account})
+        return render(request, 'main/to_account_list_options.html', {'form': form})
 
 class CreateEditAccount(View, AccountsMixin):
 

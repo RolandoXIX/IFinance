@@ -31,7 +31,9 @@ class TransactionForm(ModelForm):
                     ~Q(pk=id_from_account) & Q(account_type__type_group__in=['BU', 'CR', 'TR'])
                     )
             else:
-                self.fields['to_account'].queryset = Account.objects.exclude(pk=id_from_account)
+                self.fields['to_account'].queryset = Account.objects.filter(
+                    ~Q(pk=id_from_account) & ~Q(account_type__name='Special')
+                    )
 
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
@@ -48,7 +50,7 @@ class AccountCreateForm(ModelForm):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
-            field.widget.attrs['is'] = 'field_name'
+            field.widget.attrs['is'] = field_name
 
 
 class AccountEditForm(ModelForm):
@@ -61,4 +63,4 @@ class AccountEditForm(ModelForm):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
-            field.widget.attrs['is'] = 'field_name'
+            field.widget.attrs['is'] = field_name
