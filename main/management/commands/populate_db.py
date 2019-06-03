@@ -80,7 +80,7 @@ class Command(BaseCommand):
         peso.save()
 
         # Account and Initial Balance
-        self.create_account('Manual adjustment', None, 'Special')
+        self.create_account('Manual adjustment', 0, 'Special')
         self.create_account('Wallet', 1000, 'Cash')
         self.create_account('Bank American', 56000, 'Bank')
         self.create_account('Visa', -6000, 'Credit Card')
