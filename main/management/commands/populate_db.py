@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from main.models import AccountType, Account, TransactionEntry, Currency
+from main.models import AccountType, Account, TransactionEntry, Currency, BudgetEntry
 from django.contrib.auth.models import User
 import datetime
 
@@ -8,190 +8,126 @@ class Command(BaseCommand):
 
     help = 'populate db with start parameters and basic transactions'
 
+    def create_account(self, name, balance, account_type):
+        new_account = Account(
+            name=name, actual_balance=balance, account_type=AccountType.objects.get(name=account_type),
+            currency=Currency.objects.get(name='Peso'))
+        new_account.save()
+
+        if balance:
+            transaction = TransactionEntry(
+                date=datetime.date.today(),
+                entry_type='T',
+                from_account=new_account,
+                to_account=Account.objects.get(name='Manual adjustment'),
+                description='Update balance',
+                amount=balance,
+                conciliated=True,
+            )
+            transaction.save()
+
+
+    def create_transaction(self, from_account, to_account, amount):
+            transaction = TransactionEntry(
+                date=datetime.date.today(),
+                entry_type='T',
+                from_account=Account.objects.get(name=from_account),
+                to_account=Account.objects.get(name=to_account),
+                description='Some description',
+                amount=amount,
+                conciliated=True,
+            )
+            transaction.save()        
+
+    def create_budget_entry(self, category, amount):
+        budget_entry = BudgetEntry(
+            year = datetime.date.today().year,
+            month = datetime.date.today().month,
+            account = Account.objects.get(name=category),
+            amount = amount
+            )
+        budget_entry.save()
+
+    def create_account_type(self, name, budgetable, financeable, monthly_summary, transaction_allowed,
+        loan_allowed, split_allowed, type_group):
+
+        account_type = AccountType(
+            name=name,
+            budgetable=budgetable, financeable=financeable, monthly_summary=monthly_summary,
+            transaction_allowed=transaction_allowed, loan_allowed=loan_allowed, split_allowed=split_allowed,
+            type_group=type_group,
+        )
+        account_type.save()
+
+
     def create_initials(self):
 
-        User.objects.create_superuser('admin', 'admin@myproject.com', 'admin')
+        #User.objects.create_superuser('admin', 'admin@myproject.com', 'admin')
 
-        inflow = AccountType(
-            name='Inflow',
-            description='Categories for inflows transactions exclusively',
-            budgetable=True, financeable=False, monthly_summary=False,
-            transaction_allowed=True, loan_allowed=False, split_allowed=True,
-            type_group='CA',
-        )
-        inflow.save()
+        # AccountType
+        self.create_account_type('Inflow', True, False, False, True, False, True, 'CA')
+        self.create_account_type('Outflow', True, False, False, True, False, True, 'CA')
+        self.create_account_type('Special', False, False, False, True, True, True, 'CA')
+        self.create_account_type('Bank', True, False, False, True, True, True, 'BU')
+        self.create_account_type('Cash', True, False, False, True, True, True, 'BU')
+        self.create_account_type('Credit Card', True, True, True, True, True, True, 'CR')
+        self.create_account_type('Credit Line', True, True, False, True, True, True, 'CR')
+        self.create_account_type('Savings', False, False, False, True, False, True, 'TR')
+        self.create_account_type('Investments', False, False, False, True, False, True, 'TR')
 
-        outflow = AccountType(
-            name='Outflow',
-            description='Categories for outflows transactions exclusively',
-            budgetable=True, financeable=False, monthly_summary=False,
-            transaction_allowed=True, loan_allowed=False, split_allowed=True,
-            type_group='CA',
-        )
-        outflow.save()
-
-        special = AccountType(
-            name='Special',
-            description='Special categories non-modificables used for specific operations',
-            budgetable=False, financeable=False, monthly_summary=False, transaction_allowed=True,
-            loan_allowed=True, split_allowed=True, type_group='CA',
-        )
-        special.save()
-
-        bank = AccountType(
-            name='Bank',
-            description='For banks accounts',
-            budgetable=True, financeable=False, monthly_summary=False, transaction_allowed=True,
-            loan_allowed=True, split_allowed=True, type_group='BU',
-        )
-        bank.save()
-
-        cash = AccountType(
-            name='Cash',
-            description='For banks accounts',
-            budgetable=True, financeable=False, monthly_summary=False, transaction_allowed=True,
-            loan_allowed=True, split_allowed=True, type_group='BU',
-        )
-        cash.save()
-
-        credit_card = AccountType(
-            name='Credit Card',
-            description='Credit Card',
-            budgetable=True, financeable=True, monthly_summary=True, transaction_allowed=True,
-            loan_allowed=True, split_allowed=True, type_group='CR',
-        )
-        credit_card.save()
-
-        credit_line = AccountType(
-            name='Credit Line',
-            description='Similar to credit cards but without monthly summary',
-            budgetable=True, financeable=True, monthly_summary=False, transaction_allowed=True,
-            loan_allowed=True, split_allowed=True, type_group='CR',
-        )
-        credit_line.save()
-
-        savings = AccountType(
-            name='Savings',
-            description='An account like cash or bank but apart of budget',
-            budgetable=False, financeable=False, monthly_summary=False, transaction_allowed=True,
-            loan_allowed=False, split_allowed=True, type_group='TR',
-        )
-        savings.save()
-
-        investments = AccountType(
-            name='Investments',
-            description='An account that can generate a return',
-            budgetable=False, financeable=False, monthly_summary=False, transaction_allowed=True,
-            loan_allowed=False, split_allowed=True, type_group='TR',
-        )
-        investments.save()
-
-        peso = Currency(
-            name='Peso',
-            cod='ARS',
-        )
+        # Currency
+        peso = Currency(name='Peso', cod='ARS')
         peso.save()
 
-        manual_adjustment = Account(
-            name='Manual adjustment',
-            description='For adjustments',
-            actual_balance=0, account_type=special, currency=peso, active=True,
-        )
-        manual_adjustment.save()
+        # Account and Initial Balance
+        self.create_account('Manual adjustment', None, 'Special')
+        self.create_account('Wallet', 1000, 'Cash')
+        self.create_account('Bank American', 56000, 'Bank')
+        self.create_account('Visa', -6000, 'Credit Card')
+        self.create_account('Mastercard', -9000, 'Credit Card')
+        self.create_account('Plazo Fijo', 100000, 'Investments')
+        self.create_account('Market', 0, 'Outflow')
+        self.create_account('Education', 0, 'Outflow')
+        self.create_account('Public Services', 0, 'Outflow')
+        self.create_account('Suscriptions', 0, 'Outflow')
+        self.create_account('Gasoline', 0, 'Outflow')
+        self.create_account('Health', 0, 'Outflow')
+        self.create_account('Hollidays', 0, 'Outflow')
+        self.create_account('Salary', 0, 'Inflow')
+        self.create_account('Other Inflows', 0, 'Inflow')
+        self.create_account('Other Outflows', 0, 'Outflow')
 
-        wallet = Account(
-            name='Wallet',
-            description='Cash on hand',
-            actual_balance=1000, account_type=cash, currency=peso, active=True,
-        )
-        wallet.save()
 
-        transaction = TransactionEntry(
-            date=datetime.date.today(),
-            entry_type='T',
-            from_account=manual_adjustment,
-            to_account=wallet,
-            description='Update balance',
-            amount=1000,
-            conciliated=True,
-        )
-        transaction.save()
+        # Transactions
+        self.create_transaction('Wallet', 'Market', 2000)
+        self.create_transaction('Bank American', 'Market', 3000)
+        self.create_transaction('Wallet', 'Salary', -30000)
+        self.create_transaction('Bank American', 'Salary', -40000)
+        self.create_transaction('Wallet', 'Education', 500)
+        self.create_transaction('Wallet', 'Gasoline', 2000)
+        self.create_transaction('Visa', 'Health', 3000)
+        self.create_transaction('Visa', 'Market', 2000)
+        self.create_transaction('Mastercard', 'Other Outflows', 4000)
+        self.create_transaction('Wallet', 'Bank American', 6000)
+        self.create_transaction('Bank American', 'Public Services', 2000)
+        self.create_transaction('Bank American', 'Other Inflows', -50000)
+        self.create_transaction('Wallet', 'Hollidays', 1000)
+        self.create_transaction('Bank American', 'Plazo Fijo', 20000)
+        self.create_transaction('Visa', 'Market', 4600)
 
-        bank_of_america = Account(
-            name='Bank American',
-            description='Money in bank',
-            actual_balance=10000, account_type=bank, currency=peso, active=True,
-        )
-        bank_of_america.save()
 
-        transaction = TransactionEntry(
-            date=datetime.date.today(),
-            entry_type='T',
-            from_account=manual_adjustment,
-            to_account=bank_of_america,
-            description='Update balance',
-            amount=10000,
-            conciliated=True,
-        )
-        transaction.save()
+        # Budgets
+        self.create_budget_entry('Market', 10000)
+        self.create_budget_entry('Education', 5000)
+        self.create_budget_entry('Public Services', 1000)
+        self.create_budget_entry('Suscriptions', 4000)
+        self.create_budget_entry('Gasoline', 2000)
+        self.create_budget_entry('Health', 1500)
+        self.create_budget_entry('Hollidays', 2100)
+        self.create_budget_entry('Salary', -50000)
+        self.create_budget_entry('Other Inflows', -30000)
+        self.create_budget_entry('Other Outflows', 4000)
 
-        market = Account(
-            name='Market',
-            description='Market Expenses',
-            actual_balance=0, account_type=outflow, currency=peso, active=True,
-        )
-        market.save()
-
-        salary = Account(
-            name='Salary',
-            description='Salary',
-            actual_balance=0, account_type=inflow, currency=peso, active=True,
-        )
-        salary.save()
-
-        transaction = TransactionEntry(
-            date=datetime.date.today(),
-            entry_type='T',
-            from_account=wallet,
-            to_account=market,
-            description='Wallmart',
-            amount=2000,
-            conciliated=True,
-        )
-        transaction.save()
-
-        transaction = TransactionEntry(
-            date=datetime.date.today(),
-            entry_type='T',
-            from_account=bank_of_america,
-            to_account=market,
-            description='Wallmart',
-            amount=3000,
-            conciliated=True,
-        )
-        transaction.save()
-
-        transaction = TransactionEntry(
-            date=datetime.date.today(),
-            entry_type='T',
-            from_account=salary,
-            to_account=wallet,
-            description='May salary',
-            amount=30000,
-            conciliated=True,
-        )
-        transaction.save()
-
-        transaction = TransactionEntry(
-            date=datetime.date.today(),
-            entry_type='T',
-            from_account=salary,
-            to_account=bank_of_america,
-            description='May salary',
-            amount=40000,
-            conciliated=True,
-        )
-        transaction.save()
 
     def handle(self, *args, **options):
         self.create_initials()

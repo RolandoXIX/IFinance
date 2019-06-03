@@ -1,5 +1,5 @@
 from django.forms import ModelForm, DateInput
-from main.models import TransactionEntry, Account
+from main.models import TransactionEntry, Account, AccountType, BudgetEntry
 from django.db.models import Q
 
 
@@ -48,6 +48,9 @@ class AccountCreateForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.fields['account_type'].queryset = AccountType.objects.filter(type_group__in=['BU', 'CR', 'TR'])
+
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
             field.widget.attrs['is'] = field_name
@@ -61,6 +64,36 @@ class AccountEditForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+            field.widget.attrs['is'] = field_name
+
+
+class CategoryForm(ModelForm):
+
+    class Meta:
+        model = Account
+        fields = ['name', 'description', 'account_type']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['account_type'].queryset = AccountType.objects.filter(Q(type_group='CA') & ~Q(name='Special'))
+
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+            field.widget.attrs['is'] = field_name
+
+
+class BudgetEntryForm(ModelForm):
+
+    class Meta:
+        model = BudgetEntry
+        fields = ['year', 'month', 'account', 'amount']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
             field.widget.attrs['is'] = field_name

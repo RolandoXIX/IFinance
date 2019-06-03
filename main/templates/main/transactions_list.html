@@ -1,5 +1,6 @@
 {% extends 'main/base.html' %}
 {% load humanize %}
+{% load custom_tags %}
 
 {% block content %}
 
@@ -49,11 +50,12 @@
               <td><span class="oi oi-arrow-right" style="color:red"></span></td>
               {% endif %}
 
-              {% if transaction.to_account.pk == active.pk %}
-              <td align="right">{{ transaction.amount|floatformat:2|intcomma}}</td>
+              {% if transaction.amount > 0 %}
+              <td align="right"><span class="badge badge-pill badge-danger">{{ transaction.amount|abs|floatformat:2|intcomma}}</span></td>
               {% else %}
-              <td align="right">{{ transaction.negative_amount|floatformat:2|intcomma}}</td>
+              <td align="right"><span class="badge badge-pill badge-success">{{ transaction.amount|abs|floatformat:2|intcomma}}</span></td>
               {% endif %}
+
               <td align="right">&nbsp<a href="{% url 'edit_transaction' active.pk transaction.pk %}">
                 <span class="oi oi-eye">&nbsp&nbsp</span></a><a href="javascript:// Delete" class="delete_transaction" ="delete" name="{{ transaction.pk }}" style="color:red"><span class="oi oi-trash"></span></a>
               </td>
@@ -68,6 +70,10 @@
 {% endblock %}
 
 {% block navbar %}
+<div class="btn btn-success">{{ active.name }}</div>
+
+<div class="collapse navbar-collapse" id="navbarSupportedContent">
+  <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
   <li class="nav-item active">
     <a class="nav-link" href="{% url 'add_transaction' account=active.pk %}"><button type="button" class="btn btn-outline-secondary">Add Transaction</button><span class="sr-only">(current)</span></a>
   </li>
@@ -88,6 +94,8 @@
     <a class="nav-link" href='#'>
     <input id="search" class="form-control" type="text" placeholder="Search" aria-label="Search"></a>
   </li>
+  </ul>
+</div>
 {% endblock navbar %}
 
 {% block js %}

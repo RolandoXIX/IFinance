@@ -23,6 +23,16 @@
       overflow-x: hidden;
     }
 
+    .badge-success {
+        color: #fff;
+        background-color: #79C760;
+    }
+
+    .badge-danger {
+    color: #fff;
+    background-color: #E56874;
+    }
+    
     .dropdown-toggle::after {
     display:none;
     }
@@ -84,7 +94,10 @@
     <!-- Sidebar -->
     <div class="bg-light border-right " id="sidebar-wrapper">
       <div class="sidebar-heading d-flex justify-content-between align-items-center bg-light">
-        <a href="{% url 'transactions' %}" class="list-group-item-action">iFinance</a>
+        <a href="{% url 'budget' %}" class="list-group-item-action">Budget</a>
+      </div>
+      <div class="sidebar-heading d-flex justify-content-between align-items-center bg-light">
+        <a href="{% url 'transactions' %}" class="list-group-item-action">All accounts</a>
       </div>
       <div class="list-group list-group-flush">
 
@@ -144,16 +157,9 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="btn btn-success">{{ active.name }}</div>
+        {% block navbar %}
 
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
-
-            {% block navbar %}
-            {% endblock navbar %}
-
-          </ul>
-        </div>
+        {% endblock navbar %}
       </nav>
 
 

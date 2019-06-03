@@ -4,11 +4,12 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.datetime_safe import datetime
 from django.views.generic.base import View
-from main.forms import TransactionForm, AccountCreateForm, AccountEditForm
-from main.models import Account, TransactionEntry
+from main.forms import TransactionForm, AccountCreateForm, AccountEditForm, CategoryForm, BudgetEntryForm
+from main.models import Account, TransactionEntry, BudgetEntry
 from django.db.models import Sum, Q
 import datetime
 from django.urls import reverse
+from dateutil import relativedelta
 
 
 class AccountsMixin:
@@ -16,13 +17,6 @@ class AccountsMixin:
     def get_pay_account_list(self):
         return Account.objects.filter(account_type__type_group__in=['BU', 'CR', 'TR'])
 
-    def get_balance(self, account):
-        from_account_sum = TransactionEntry.objects.filter(from_account=account).aggregate(
-            fsum=Coalesce(Sum('amount'), 0))
-        to_account_sum = TransactionEntry.objects.filter(to_account=account).aggregate(
-            tsum=Coalesce(Sum('amount'), 0))
-        balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
-        return balance_account
 
     def get_active_account(self, pk):
         try:
@@ -32,7 +26,7 @@ class AccountsMixin:
         return active
 
     def adjust_balance(self, account):
-        adjust = self.get_balance(account) - account.actual_balance
+        adjust = account.get_balance() - account.actual_balance
         if adjust:
             transaction = TransactionEntry(
                 date=datetime.date.today(),
@@ -49,7 +43,7 @@ class AccountsMixin:
 
         for account in self.get_pay_account_list():
             instance = Account.objects.get(pk=account.pk)
-            instance.actual_balance = self.get_balance(account)
+            instance.actual_balance = account.get_balance()
             instance.save()
 
     def get_type_group_balance(self):
@@ -122,13 +116,14 @@ class LoadToAccounts(View):
         form = TransactionForm(initial={'from_account': id_from_account})
         return render(request, 'main/to_account_list_options.html', {'form': form})
 
+
 class CreateEditAccount(View, AccountsMixin):
 
     def get(self, request, account=None):
 
         if account:
             instance = get_object_or_404(Account, pk=account)
-            instance.actual_balance = self.get_balance(instance)
+            instance.actual_balance = Account.get_balance(instance)
             form = AccountEditForm(instance=instance)
         else:
             form = AccountCreateForm()
@@ -167,3 +162,86 @@ class DeleteAccount(View, AccountsMixin):
         instance.delete()
         self.update_balance()
         return HttpResponseRedirect(reverse('main_home'))
+
+
+class CreateEditCategory(View, AccountsMixin):
+
+    def get(self, request, year, month, category=None):
+
+        if category:
+            instance = get_object_or_404(Account, pk=category)
+            form = CategoryForm(instance=instance)
+        else:
+            form = CategoryForm()
+        context = {'accounts_list': self.get_pay_account_list(), 'form': form, 'year': year, 'month': month}
+        return render(request, 'main/create_edit.html', context)
+
+    def post(self, request, year, month, category=None):
+        
+        redirect = reverse('budget', kwargs={'year': year, 'month': month})
+        
+        try:
+            instance = Account.objects.get(pk=category)
+            form = CategoryForm(request.POST, instance=instance)
+        except ObjectDoesNotExist:
+            form = CategoryForm(request.POST)
+        context = {'accounts_list': self.get_pay_account_list(), 'form': form}
+
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(redirect)
+        else:
+            return render(request, 'main/create_edit.html', context)
+
+
+class Budget(View, AccountsMixin):
+
+    def get(self, request, year=None, month=None):
+
+        if not year:
+            year = datetime.datetime.now().year
+            month = datetime.datetime.now().month
+        
+        reference_date = datetime.datetime(year=year, month=month, day=1)
+        next_month = reference_date + relativedelta.relativedelta(months=1)
+        next_month = {'year': next_month.year, 'month': next_month.month}
+        previous_month = reference_date + relativedelta.relativedelta(months=-1)
+        previous_month = {'year': previous_month.year, 'month': previous_month.month}
+
+
+        category_list = Account.objects.filter(Q(account_type__type_group='CA') & ~Q(account_type__name='Special'))
+        context = {
+            'accounts_list': self.get_pay_account_list(), 'category_list': category_list, 'year': year,
+            'month': month, 'previous_month': previous_month, 'next_month': next_month
+         }
+        return render(request, 'main/budget.html', context)
+
+
+class CreateEditBudgetEntry(View, AccountsMixin):
+
+    def get(self, request, year=None, month=None, category=None):
+
+        try:
+            instance = BudgetEntry.objects.filter(Q(account=category) & Q(year=year) & Q(month=month)).get()
+            form = BudgetEntryForm(instance=instance)
+        except ObjectDoesNotExist:
+            form = BudgetEntryForm(initial={'account': category, 'year': year, 'month': month})
+        context = {'accounts_list': self.get_pay_account_list(), 'form': form, 'year': year, 'month': month}
+        return render(request, 'main/create_edit.html', context)
+
+    def post(self, request, year, month, category=None):
+        
+        redirect = reverse('budget', kwargs={'year': year, 'month': month})
+        
+        try:
+            instance = BudgetEntry.objects.filter(Q(account=category) & Q(year=year) & Q(month=month)).get()
+            form = BudgetEntryForm(request.POST, instance=instance)
+        except ObjectDoesNotExist:
+            form = BudgetEntryForm(request.POST)
+        context = {'accounts_list': self.get_pay_account_list(), 'form': form, 'year': year, 'month': month}
+
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(redirect)
+        else:
+            return render(request, 'main/create_edit.html', context)
