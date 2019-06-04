@@ -29,6 +29,23 @@ class AccountType(models.Model):
     def __str__(self):
         return self.name
 
+    def get_balance(self, year=None, month=None):
+        from_account_sum = TransactionEntry.objects.filter(Q(from_account__account_type=self) & Q(date__year=year) &
+            Q(date__month=month)).aggregate(
+            fsum=Coalesce(Sum('amount'), 0))
+        to_account_sum = TransactionEntry.objects.filter(Q(to_account__account_type=self) & Q(date__year=year) &
+            Q(date__month=month)).aggregate(
+            tsum=Coalesce(Sum('amount'), 0))
+        balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
+        return balance_account
+
+    def get_budget(self, year=None, month=None):
+        budget = BudgetEntry.objects.filter(Q(account__account_type=self) & Q(month=month) & Q(year=year))
+        return budget.aggregate(sum=Coalesce(Sum('amount'), 0))['sum']
+
+    def get_available(self, year=None, month=None):
+        return self.get_budget(year, month) - self.get_balance(year, month)
+
 
 class Currency(models.Model):
 

@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.datetime_safe import datetime
 from django.views.generic.base import View
 from main.forms import TransactionForm, AccountCreateForm, AccountEditForm, CategoryForm, BudgetEntryForm
-from main.models import Account, TransactionEntry, BudgetEntry
+from main.models import Account, TransactionEntry, BudgetEntry, AccountType
 from django.db.models import Sum, Q
 import datetime
 from django.urls import reverse
@@ -16,7 +16,6 @@ class AccountsMixin:
 
     def get_pay_account_list(self):
         return Account.objects.filter(account_type__type_group__in=['BU', 'CR', 'TR'])
-
 
     def get_active_account(self, pk):
         try:
@@ -207,12 +206,18 @@ class Budget(View, AccountsMixin):
         next_month = {'year': next_month.year, 'month': next_month.month}
         previous_month = reference_date + relativedelta.relativedelta(months=-1)
         previous_month = {'year': previous_month.year, 'month': previous_month.month}
+        
+        account_types = AccountType.objects.filter(name__in=['Inflow', 'Outflow'])
 
+        balance_budget = 0
+        for account_type in account_types:
+            balance_budget += -account_type.get_budget(year=year, month=month)
 
         category_list = Account.objects.filter(Q(account_type__type_group='CA') & ~Q(account_type__name='Special'))
         context = {
             'accounts_list': self.get_pay_account_list(), 'category_list': category_list, 'year': year,
-            'month': month, 'previous_month': previous_month, 'next_month': next_month
+            'month': month, 'previous_month': previous_month, 'next_month': next_month, 'account_types': account_types,
+            'balance_budget': balance_budget 
          }
         return render(request, 'main/budget.html', context)
 

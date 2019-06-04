@@ -12,41 +12,28 @@
               <th scope="col" style="width: 100%">Category</th>
               <th align="right" scope="col" style="width: 40%">Budget</th>
               <th align="right" scope="col" style="width: 40%">Activity</th>
-              <th align="right" scope="col" style="width: 40%">Available</th>
+              <th align="right" scope="col" style="width: 40%">Balance</th>
             </tr>
           </thead>
           <tbody>
-            <tr class="table-primary">
-	            <td>Inflows</td>
-	            <td></td>
-	            <td></td>
-	            <td></td>
-            </tr>            
-            {% for category in category_list %}
-            {% if category.account_type.name == 'Inflow' %}
-            <tr>
-	            <td><a href={% url 'edit_category' year month category.pk %}>{{ category.name }}</td></a>
-	            <td align="right"><a href={% url 'edit_budget' year month category.pk %}>{% category_method category 'get_budget' year month %}</td></a>
-	            <td align="right">{% category_method category 'get_balance' year month %}</td>
-              <td align="right">{% category_method_abs category 'get_available' year month %}</td>
-            </tr>
-            {% endif %}  
-            {% endfor %}
-            <tr class="table-primary">
-	            <td>Outflows</td>
-	            <td></td>
-	            <td></td>
-	            <td></td>
-            </tr>   
-            {% for category in category_list %}
-            {% if category.account_type.name == 'Outflow' %}
-            <tr>
-	            <td><a href={% url 'edit_category' year month category.pk %}>{{ category.name }}</td></a>
-	            <td align="right"><a href={% url 'edit_budget' year month category.pk %}>{% category_method category 'get_budget' year month %}</td></a>
-	            <td align="right">{% category_method category 'get_balance' year month %}</td>
-	            <td align="right">{% category_method_abs category 'get_available' year month %}</td>
-            </tr>
-            {% endif %} 
+            
+            {% for type in account_types %}
+              <tr class="table-primary font-weight-bold">
+  	            <td>{{type}}</td>
+  	            <td align="right">{% category_method type 'get_budget' year month %}</td>
+  	            <td align="right">{% category_method type 'get_balance' year month %}</td>
+  	            <td align="right">{% category_method type 'get_available' year month %}</td>
+              </tr>            
+              {% for category in category_list %}
+                {% if category.account_type.name == type.name %}
+                  <tr>
+      	            <td><a href={% url 'edit_category' year month category.pk %}>{{ category.name }}</td></a>
+      	            <td align="right"><a href={% url 'edit_budget' year month category.pk %}>{% category_method category 'get_budget' year month %}</td></a>
+      	            <td align="right">{% category_method category 'get_balance' year month %}</td>
+                    <td align="right">{% category_method_abs category 'get_available' year month %}</td>
+                  </tr>
+                {% endif %}  
+              {% endfor %}
             {% endfor %}
           </tbody>
         </table>
@@ -55,9 +42,11 @@
 {% endblock %}
 
 {% block navbar %}
-<a href={% url 'budget' previous_month.year previous_month.month %} style="color:black"><span class="oi oi-caret-left"></span></a>&nbsp&nbsp
-<div class="btn btn-success">{{ year }} - {{ month }}</div>&nbsp&nbsp
-<a href={% url 'budget' next_month.year next_month.month %} style="color:black"><span class="oi oi-caret-right"></span></a>
+<a href={% url 'budget' previous_month.year previous_month.month %} style="color:black" class='pl-5'><span class="oi oi-caret-left mr-2"></span></a>
+<div class="btn btn-success">{{ year }} - {{ month }}</div>
+<a href={% url 'budget' next_month.year next_month.month %} style="color:black"><span class="oi oi-caret-right ml-2"></span></a>
+<div class="col-1"></div>
+<div class="btn btn-info"><span class='small mr-2'>Budget Balance = </span><b>{{ balance_budget|floatformat:2|intcomma }}</b></div>
 
 <div class="collapse navbar-collapse" id="navbarSupportedContent">
   <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
