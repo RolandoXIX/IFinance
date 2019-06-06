@@ -92,52 +92,38 @@
   <div class="d-flex " id="wrapper">
 
     <!-- Sidebar -->
-    <div class="bg-light border-right " id="sidebar-wrapper">
+    <div class="bg-light border-right" id="sidebar-wrapper">
       <div class="sidebar-heading d-flex justify-content-between align-items-center bg-light">
-        <a href="{% url 'budget' %}" class="list-group-item-action">Budget</a>
+        <a href="{% url 'main_home' %}" class="list-group-item-action font-weight-bold text-danger">iFinance</a>
       </div>
-      <div class="sidebar-heading d-flex justify-content-between align-items-center bg-light">
-        <a href="{% url 'transactions' %}" class="list-group-item-action">All accounts</a>
+        <div class="list-group list-group-flush">
+          <a href="{% url 'budget' %}" class="list-group-item list-group-item-action py-0 mb-1 d-flex border-0 justify-content-between align-items-center bg-light text-uppercase">Budget</a>
+          <a href="{% url 'transactions' %}" class="list-group-item list-group-item-action py-0 mb-4 d-flex border-0 justify-content-between align-items-center bg-light text-uppercase">All accounts</a>
       </div>
       <div class="list-group list-group-flush">
 
         <!-- Sidebar accounts and balance -->
-
-        <a class="list-group-item py-0 d-flex justify-content-between align-items-center bg-light border-top"><small>BUDGET</small></a>
-          
-        {% for account in accounts_list %}
-        {% if account.account_type.type_group == 'BU' %}
-        <a href="{% url 'transactions' account.pk %}" class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light">
-        - {{ account.name }}
-          <span class="badge badge-primary badge-pill">{{ account.actual_balance|floatformat:2|intcomma }}</span>
-        </a>
-        {% endif %}
+        
+        {% for subtype in account_subtypes %}
+          <a class="list-group-item py-0 d-flex justify-content-between align-items-center bg-light border-top small text-info font-weight-bold">
+            {{ subtype.name }}
+            <span class="badge badge-primary badge-pill badge-info">{{ subtype.get_balance|floatformat:2|intcomma }}</span>
+          </a>
+          {% for account in accounts %}
+          {% if account.account_group.account_subtype == subtype %}
+            <a href="{% url 'transactions' account.pk %}" class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light small">
+              {{ account.name }}
+              {% if account.actual_balance > 0 %}
+              <span class="badge badge-primary badge-pill badge-light">{{ account.actual_balance|floatformat:2|intcomma }}</span>
+              {% else %}
+              <span class="badge badge-primary badge-pill badge-light">{{ account.actual_balance|floatformat:2|intcomma }}</span>
+              {% endif %}
+            </a>
+          {% endif %}
+          {% endfor %}
+          <hr>
         {% endfor %}
-
-        <hr>
-        <a class="list-group-item py-0 d-flex justify-content-between align-items-center bg-light border-top"><small>CREDIT</small></a>
-          
-        {% for account in accounts_list %}
-        {% if account.account_type.type_group == 'CR' %}
-        <a href="{% url 'transactions' account.pk %}" class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light">
-        - {{ account.name }}
-          <span class="badge badge-primary badge-pill">{{ account.actual_balance|floatformat:2|intcomma }}</span>
-        </a>
-        {% endif %}
-        {% endfor %}
-
-        <hr>
-        <a class="list-group-item py-0 d-flex justify-content-between align-items-center bg-light border-top"><small>TRACKING</small></a>
-          
-        {% for account in accounts_list %}
-        {% if account.account_type.type_group == 'TR' %}
-        <a href="{% url 'transactions' account.pk %}" class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light">
-        - {{ account.name }}
-          <span class="badge badge-primary badge-pill">{{ account.actual_balance|floatformat:2|intcomma }}</span>
-        </a>
-        {% endif %}
-        {% endfor %}
-
+        
         <!-- Add account button -->
         <br>
         <a class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light" href="{% url 'add_account' %}" ><button type="button" class="btn btn-outline-secondary btn-sm">Add Account</button></a>

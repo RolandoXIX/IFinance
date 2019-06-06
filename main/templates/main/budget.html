@@ -17,15 +17,15 @@
           </thead>
           <tbody>
             
-            {% for type in account_types %}
+            {% for subtype in category_subtypes %}
               <tr class="table-primary font-weight-bold">
-  	            <td>{{type}}</td>
-  	            <td align="right">{% category_method type 'get_budget' year month %}</td>
-  	            <td align="right">{% category_method type 'get_balance' year month %}</td>
-  	            <td align="right">{% category_method type 'get_available' year month %}</td>
+  	            <td>{{subtype.name}}</td>
+  	            <td align="right">{% category_method subtype 'get_budget' year month %}</td>
+  	            <td align="right">{% category_method subtype 'get_balance' year month %}</td>
+  	            <td align="right">{% category_method subtype 'get_available' year month %}</td>
               </tr>            
-              {% for category in category_list %}
-                {% if category.account_type.name == type.name %}
+              {% for category in categories %}
+                {% if category.account_group.account_subtype == subtype %}
                   <tr>
       	            <td><a href={% url 'edit_category' year month category.pk %}>{{ category.name }}</td></a>
       	            <td align="right"><a href={% url 'edit_budget' year month category.pk %}>{% category_method category 'get_budget' year month %}</td></a>
@@ -46,7 +46,7 @@
 <div class="btn btn-success">{{ year }} - {{ month }}</div>
 <a href={% url 'budget' next_month.year next_month.month %} style="color:black"><span class="oi oi-caret-right ml-2"></span></a>
 <div class="col-1"></div>
-<div class="btn btn-info"><span class='small mr-2'>Budget Balance = </span><b>{{ balance_budget|floatformat:2|intcomma }}</b></div>
+<span class='small mr-2'>Budget Balance = </span><div class="btn btn-info"><b>{{ balance_budget|floatformat:2|intcomma }}</b></div>
 
 <div class="collapse navbar-collapse" id="navbarSupportedContent">
   <ul class="navbar-nav ml-auto mt-2 mt-lg-0">

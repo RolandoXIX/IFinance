@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from main.models import AccountType, Account, TransactionEntry, Currency, BudgetEntry
+from main.models import AccountType, Account, TransactionEntry, Currency, BudgetEntry, AccountSubType, AccountGroup
 from django.contrib.auth.models import User
 import datetime
 
@@ -8,9 +8,22 @@ class Command(BaseCommand):
 
     help = 'populate db with start parameters and basic transactions'
 
-    def create_account(self, name, balance, account_type):
+
+    def create_account_type(self, name):
+        account_type = AccountType(name=name)
+        account_type.save()
+
+    def create_account_subtype(self, name, account_type):
+        account_subtype = AccountSubType(name=name, account_type=account_type)
+        account_subtype.save()
+
+    def create_account_group(self, name, account_subtype):
+        account_group = AccountGroup(name=name, account_subtype=account_subtype)
+        account_group.save()        
+
+    def create_account(self, name, balance, account_group):
         new_account = Account(
-            name=name, actual_balance=balance, account_type=AccountType.objects.get(name=account_type),
+            name=name, actual_balance=balance, account_group=AccountGroup.objects.get(name=account_group),
             currency=Currency.objects.get(name='Peso'))
         new_account.save()
 
@@ -48,32 +61,35 @@ class Command(BaseCommand):
             )
         budget_entry.save()
 
-    def create_account_type(self, name, budgetable, financeable, monthly_summary, transaction_allowed,
-        loan_allowed, split_allowed, type_group):
-
-        account_type = AccountType(
-            name=name,
-            budgetable=budgetable, financeable=financeable, monthly_summary=monthly_summary,
-            transaction_allowed=transaction_allowed, loan_allowed=loan_allowed, split_allowed=split_allowed,
-            type_group=type_group,
-        )
-        account_type.save()
-
 
     def create_initials(self):
 
         #User.objects.create_superuser('admin', 'admin@myproject.com', 'admin')
 
         # AccountType
-        self.create_account_type('Inflow', True, False, False, True, False, True, 'CA')
-        self.create_account_type('Outflow', True, False, False, True, False, True, 'CA')
-        self.create_account_type('Special', False, False, False, True, True, True, 'CA')
-        self.create_account_type('Bank', True, False, False, True, True, True, 'BU')
-        self.create_account_type('Cash', True, False, False, True, True, True, 'BU')
-        self.create_account_type('Credit Card', True, True, True, True, True, True, 'CR')
-        self.create_account_type('Credit Line', True, True, False, True, True, True, 'CR')
-        self.create_account_type('Savings', False, False, False, True, False, True, 'TR')
-        self.create_account_type('Investments', False, False, False, True, False, True, 'TR')
+        self.create_account_type('Category')
+        self.create_account_type('Account')
+        self.create_account_type('Special')
+
+        # AccountSubType
+        self.create_account_subtype('Inflow', AccountType.objects.get(name='Category'))
+        self.create_account_subtype('Outflow', AccountType.objects.get(name='Category'))
+        self.create_account_subtype('Budget', AccountType.objects.get(name='Account'))
+        self.create_account_subtype('Credit', AccountType.objects.get(name='Account'))
+        self.create_account_subtype('Tracking', AccountType.objects.get(name='Account'))
+        self.create_account_subtype('Special', AccountType.objects.get(name='Special'))
+
+        # AccountGroup
+        self.create_account_group('Special', AccountSubType.objects.get(name='Special'))
+        self.create_account_group('Bank', AccountSubType.objects.get(name='Budget'))
+        self.create_account_group('Cash', AccountSubType.objects.get(name='Budget'))
+        self.create_account_group('Credit Card', AccountSubType.objects.get(name='Credit'))
+        self.create_account_group('Credit Line', AccountSubType.objects.get(name='Credit'))
+        self.create_account_group('Savings', AccountSubType.objects.get(name='Tracking'))
+        self.create_account_group('Investments', AccountSubType.objects.get(name='Tracking'))
+        self.create_account_group('Other Inflows', AccountSubType.objects.get(name='Inflow'))
+        self.create_account_group('Other Outflows', AccountSubType.objects.get(name='Outflow'))
+
 
         # Currency
         peso = Currency(name='Peso', cod='ARS')
@@ -86,16 +102,16 @@ class Command(BaseCommand):
         self.create_account('Visa', -6000, 'Credit Card')
         self.create_account('Mastercard', -9000, 'Credit Card')
         self.create_account('Plazo Fijo', 100000, 'Investments')
-        self.create_account('Market', 0, 'Outflow')
-        self.create_account('Education', 0, 'Outflow')
-        self.create_account('Public Services', 0, 'Outflow')
-        self.create_account('Suscriptions', 0, 'Outflow')
-        self.create_account('Gasoline', 0, 'Outflow')
-        self.create_account('Health', 0, 'Outflow')
-        self.create_account('Hollidays', 0, 'Outflow')
-        self.create_account('Salary', 0, 'Inflow')
-        self.create_account('Other Inflows', 0, 'Inflow')
-        self.create_account('Other Outflows', 0, 'Outflow')
+        self.create_account('Market', 0, 'Other Outflows')
+        self.create_account('Education', 0, 'Other Outflows')
+        self.create_account('Public Services', 0, 'Other Outflows')
+        self.create_account('Suscriptions', 0, 'Other Outflows')
+        self.create_account('Gasoline', 0, 'Other Outflows')
+        self.create_account('Health', 0, 'Other Outflows')
+        self.create_account('Hollidays', 0, 'Other Outflows')
+        self.create_account('Salary', 0, 'Other Inflows')
+        self.create_account('Other Inflows', 0, 'Other Inflows')
+        self.create_account('Other Outflows', 0, 'Other Outflowsx1')
 
 
         # Transactions

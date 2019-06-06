@@ -25,7 +25,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for transaction in transactions_list %}
+            {% for transaction in transactions %}
             <tr>
               <td class="bs-checkbox"><input data-index="0" name="id" value="{{ transaction.id }}" type="checkbox"></td>
               <td>{{ transaction.date|date:"SHORT_DATE_FORMAT" }}</td>
@@ -42,9 +42,9 @@
 
               <td>{{ transaction.description }}</td>
 
-              {% if transaction.to_account in accounts_list and transaction.from_account in accounts_list %}
+              {% if transaction.to_account in accounts and transaction.from_account in accounts %}
               <td><span class="oi oi-transfer" style="color:blue"></span></td>
-              {% elif transaction.from_account in accounts_list and transaction.amount < 0 %}
+              {% elif transaction.from_account in accounts and transaction.amount < 0 %}
               <td><span class="oi oi-arrow-left" style="color:green"></span></td>
               {% else %}
               <td><span class="oi oi-arrow-right" style="color:red"></span></td>
@@ -75,7 +75,9 @@
 <div class="collapse navbar-collapse" id="navbarSupportedContent">
   <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
   <li class="nav-item active">
-    <a class="nav-link" href="{% url 'add_transaction' account=active.pk %}"><button type="button" class="btn btn-outline-secondary">Add Transaction</button><span class="sr-only">(current)</span></a>
+    <a class="nav-link" href="{% url 'add_transaction' account=active.pk %}">
+      <button type="button" class="btn btn-outline-secondary">Add Transaction</button>
+    </a>
   </li>
   {% if active.pk != 0 %}
   <li class="nav-item dropdown">
