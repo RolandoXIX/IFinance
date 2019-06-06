@@ -111,7 +111,7 @@ class Command(BaseCommand):
         self.create_account('Hollidays', 0, 'Other Outflows')
         self.create_account('Salary', 0, 'Other Inflows')
         self.create_account('Other Inflows', 0, 'Other Inflows')
-        self.create_account('Other Outflows', 0, 'Other Outflowsx1')
+        self.create_account('Other Outflows', 0, 'Other Outflows')
 
 
         # Transactions
