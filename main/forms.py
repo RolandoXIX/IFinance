@@ -1,5 +1,5 @@
 from django.forms import ModelForm, DateInput
-from main.models import TransactionEntry, Account, AccountType, BudgetEntry, AccountGroup
+from main.models import TransactionEntry, Account, AccountType, BudgetEntry, AccountGroup, AccountSubType
 from django.db.models import Q
 
 
@@ -78,6 +78,22 @@ class CategoryForm(ModelForm):
         super().__init__(*args, **kwargs)
 
         self.fields['account_group'].queryset = AccountGroup.objects.filter(account_subtype__account_type__name='Category')
+
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+            field.widget.attrs['is'] = field_name
+
+
+class CategoryGroupForm(ModelForm):
+
+    class Meta:
+        model = AccountGroup
+        fields = ['name', 'description', 'account_subtype']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['account_subtype'].queryset = AccountSubType.objects.filter(account_type__name='Category')
 
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'

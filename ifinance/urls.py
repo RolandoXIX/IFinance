@@ -18,7 +18,8 @@ urlpatterns = [
     #budget
     path('budget/', main_views.Budget.as_view(), name='budget'),
     path('budget/<int:year>/<int:month>/', main_views.Budget.as_view(), name='budget'),
-    path('budget/<int:year>/<int:month>/add/', main_views.CreateEditCategory.as_view(), name='add_category'),
+    path('budget/<int:year>/<int:month>/add_category/', main_views.CreateEditCategory.as_view(), name='add_category'),
+    path('budget/<int:year>/<int:month>/add_group/', main_views.CreateEditCategoryGroup.as_view(), name='add_group'),
     path('budget/<int:year>/<int:month>/<int:category>/budget', main_views.CreateEditBudgetEntry.as_view(), name='edit_budget'),
     path('budget/<int:year>/<int:month>/<int:category>/edit', main_views.CreateEditCategory.as_view(), name='edit_category'),
     #path('budget/<int:year>/<int:month>/<int:category>/delete/', main_views.ListCategories.as_view(), name='delete_category'),

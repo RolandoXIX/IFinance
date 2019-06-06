@@ -4,10 +4,11 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.datetime_safe import datetime
 from django.views.generic.base import View
-from main.forms import TransactionForm, AccountCreateForm, AccountEditForm, CategoryForm, BudgetEntryForm
+from main.forms import TransactionForm, AccountCreateForm, AccountEditForm, CategoryForm, BudgetEntryForm, CategoryGroupForm
 from main.models import Account, TransactionEntry, BudgetEntry, AccountType, AccountSubType, AccountGroup
 from django.db.models import Sum, Q
 import datetime
+import calendar
 from django.urls import reverse
 from dateutil import relativedelta
 
@@ -22,6 +23,9 @@ class AccountsMixin:
 
     def get_categories(self):
         return Account.objects.filter(account_group__account_subtype__account_type__name='Category')
+
+    def get_category_groups(self):
+        return AccountGroup.objects.filter(account_subtype__account_type__name='Category')        
 
     def get_active_account(self, pk):
         try:
@@ -169,8 +173,9 @@ class CreateEditCategory(View, AccountsMixin):
             form = CategoryForm(instance=instance)
         else:
             form = CategoryForm()
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(),'accounts_list': self.get_accounts(), 'form': form, 'year': year, 'month': month}
-        return render(request, 'main/create_edit.html', context)
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(),
+        'form': form, 'year': year, 'month': month}
+        return render(request, 'main/create_edit_category.html', context)
 
     def post(self, request, year, month, category=None):
         
@@ -181,14 +186,44 @@ class CreateEditCategory(View, AccountsMixin):
             form = CategoryForm(request.POST, instance=instance)
         except ObjectDoesNotExist:
             form = CategoryForm(request.POST)
-        context = {'accounts_list': self.get_accounts(), 'form': form}
+        context = {'accounts': self.get_accounts(), 'form': form}
 
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(redirect)
         else:
-            return render(request, 'main/create_edit.html', context)
+            return render(request, 'main/create_edit_category.html', context)
 
+
+class CreateEditCategoryGroup(View, AccountsMixin):
+
+    def get(self, request, year, month, category_group=None):
+
+        if category_group:
+            instance = get_object_or_404(AccountGroup, pk=category_group)
+            form = CategoryGroupForm(instance=instance)
+        else:
+            form = CategoryGroupForm()
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(),
+        'form': form, 'year': year, 'month': month}
+        return render(request, 'main/create_edit_category.html', context)
+
+    def post(self, request, year, month, category_group=None):
+        
+        redirect = reverse('budget', kwargs={'year': year, 'month': month})
+        
+        try:
+            instance = AccountGroup.objects.get(pk=category_group)
+            form = CategoryGroupForm(request.POST, instance=instance)
+        except ObjectDoesNotExist:
+            form = CategoryGroupForm(request.POST)
+        context = {'accounts': self.get_accounts(), 'form': form}
+
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(redirect)
+        else:
+            return render(request, 'main/create_edit_category.html', context)
 
 class Budget(View, AccountsMixin):
 
@@ -205,15 +240,16 @@ class Budget(View, AccountsMixin):
         previous_month = {'year': previous_month.year, 'month': previous_month.month}
         
         category_subtypes = AccountSubType.objects.filter(account_type__name='Category')
+        month_abbr = calendar.month_abbr[month]
 
         balance_budget = 0
         for subtype in category_subtypes:
             balance_budget += -subtype.get_budget(year=year, month=month)
 
         context = {
-            'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(),'accounts_list': self.get_accounts(), 'categories': self.get_categories(), 'year': year,
-            'month': month, 'previous_month': previous_month, 'next_month': next_month, 'category_subtypes': category_subtypes,
-            'balance_budget': balance_budget 
+            'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'categories': self.get_categories(), 
+            'category_groups': self.get_category_groups(), 'year': year, 'month': month, 'previous_month': previous_month, 
+            'next_month': next_month, 'category_subtypes': category_subtypes, 'month_abbr': month_abbr, 'balance_budget': balance_budget 
          }
         return render(request, 'main/budget.html', context)
 
@@ -227,7 +263,8 @@ class CreateEditBudgetEntry(View, AccountsMixin):
             form = BudgetEntryForm(instance=instance)
         except ObjectDoesNotExist:
             form = BudgetEntryForm(initial={'account': category, 'year': year, 'month': month})
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 'year': year, 'month': month}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 
+        'year': year, 'month': month}
         return render(request, 'main/budget_entry.html', context)
 
     def post(self, request, year, month, category=None):
@@ -239,7 +276,8 @@ class CreateEditBudgetEntry(View, AccountsMixin):
             form = BudgetEntryForm(request.POST, instance=instance)
         except ObjectDoesNotExist:
             form = BudgetEntryForm(request.POST)
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 'year': year, 'month': month}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 
+        'year': year, 'month': month}
 
         if form.is_valid():
             form.save()
