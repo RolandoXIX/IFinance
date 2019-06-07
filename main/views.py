@@ -243,8 +243,6 @@ class Budget(View, AccountsMixin):
         month_abbr = calendar.month_abbr[month]
 
         balance_budget = 0
-        for subtype in category_subtypes:
-            balance_budget += -subtype.get_budget(year=year, month=month)
 
         context = {
             'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'categories': self.get_categories(), 

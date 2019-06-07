@@ -4,6 +4,30 @@ from django.contrib.auth.models import User
 import datetime
 
 
+def special_inflows_actvity(subtype, year, month):
+
+    budget_accounts = Account.objects.exclude(account_group__account_subtype__name='Budget')
+    subtype_accounts = Account.objects.filter(account_group__account_subtype=subtype)
+
+    from_account_sum = TransactionEntry.objects.filter(
+        Q(from_account__in=subtype_accounts) & 
+        Q(to_account__in=budget_accounts) &
+        Q(amount__lt=0) &
+        Q(date__year=year) &
+        Q(date__month=month)
+        ).aggregate(fsum=Coalesce(Sum('amount'), 0))
+    to_account_sum = TransactionEntry.objects.filter(
+        Q(from_account__in=budget_accounts) & 
+        Q(to_account__in=subtype_accounts) &
+        Q(amount__gt=0) &
+        Q(date__year=year) &
+        Q(date__month=month)).aggregate(tsum=Coalesce(Sum('amount'), 0))
+    balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
+    return balance_account
+
+def disponibilities_activity(year, month):
+    
+
 class Command(BaseCommand):
 
     help = 'populate db with start parameters and basic transactions'
@@ -111,7 +135,7 @@ class Command(BaseCommand):
         self.create_account('Hollidays', 0, 'Other Outflows')
         self.create_account('Salary', 0, 'Other Inflows')
         self.create_account('Other Inflows', 0, 'Other Inflows')
-        self.create_account('Other Outflows', 0, 'Other Outflowsx1')
+        self.create_account('Other Outflows', 0, 'Other Outflows')
 
 
         # Transactions

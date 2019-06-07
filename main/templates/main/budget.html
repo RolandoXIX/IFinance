@@ -17,34 +17,33 @@
           </thead>
           <tbody>
             
-            {% for subtype in category_subtypes %}
+
               <tr class="table-primary font-weight-bold">
-  	            <td>{{subtype.name}}</td>
-  	            <td align="right">{% category_method subtype 'get_budget' year month %}</td>
-  	            <td align="right">{% category_method subtype 'get_balance' year month %}</td>
-  	            <td align="right">{% category_method subtype 'get_available' year month %}</td>
-              </tr>            
-              {% for group in category_groups %}
-                {% if group.account_subtype == subtype %}
+  	            <td>Disponibilities</td>
+  	            <td align="right">{% call_service 'disponibilities_budget' year month %}</td>
+  	            <td align="right">{% call_service 'disponibilities_activity' year month %}</td>
+  	            <td align="right">{% call_service 'disponibilities_pending' year month %}</td>
+              </tr>
+              {% for category_group in category_groups %}        
+                {% if category_group.account_subtype.name == 'Inflow' %}
                   <tr class="font-weight-bold">
-                    <td>{{group.name}}</td>
-                    <td align="right">{% category_method group 'get_budget' year month %}</td>
-                    <td align="right">{% category_method group 'get_balance' year month %}</td>
-                    <td align="right">{% category_method group 'get_available' year month %}</td>
-                  </tr>
+                    <td>{{ category_group.name }}</td>
+                    <td align="right">{% call_service 'get_groups_budget' category_group year month %}</td>
+                    <td align="right">{% call_service 'get_groups_activity' category_group year month %}</td>
+                    <td align="right">{% call_service 'get_groups_pending' category_group year month %}</td>
+                  </tr>                      
                   {% for category in categories %}
-                    {% if category.account_group == group %}
+                    {% if category.account_group == category_group %}
                       <tr>
-          	            <td><a href={% url 'edit_category' year month category.pk %}>{{ category.name }}</td></a>
-          	            <td align="right"><a href={% url 'edit_budget' year month category.pk %}>{% category_method category 'get_budget' year month %}</td></a>
-          	            <td align="right">{% category_method category 'get_balance' year month %}</td>
-                        <td align="right">{% category_method_abs category 'get_available' year month %}</td>
+                        <td>{{ account.name }}</td>
+                        <td align="right">{% call_service 'get_accounts_budget' category year month %}</td>
+                        <td align="right">{% call_service 'get_accounts_activity' category year month %}</td>
+                        <td align="right">{% call_service 'get_accounts_pending' category year month %}</td>
                       </tr>
                     {% endif %}
                   {% endfor %}
-                {% endif %} 
+                {% endif %}
               {% endfor %}
-            {% endfor %}
           </tbody>
         </table>
 </div>
@@ -56,7 +55,7 @@
 <div class="btn btn-success font-weight-bold">{{ month_abbr|upper }} {{ year }}</div>
 <a href={% url 'budget' next_month.year next_month.month %} style="color:black"><span class="oi oi-caret-right ml-2"></span></a>
 <div class="col-1"></div>
-<span class='small mr-2'>Budget Balance = </span><div class="btn btn-info"><b>{{ balance_budget|floatformat:2|intcomma }}</b></div>
+<span class='small mr-2'>Budget Balance = </span><div class="btn btn-info"><b></b></div>
 
 <div class="collapse navbar-collapse" id="navbarSupportedContent">
   <ul class="navbar-nav ml-auto mt-2 mt-lg-0">

@@ -34,28 +34,18 @@ class AccountSubType(models.Model):
     account_type = models.ForeignKey(AccountType, on_delete=models.CASCADE, related_name='account_subtypes')
 
     def get_balance(self, year=None, month=None):
-        if year:
-            from_account_sum = TransactionEntry.objects.filter(Q(from_account__account_group__account_subtype=self) & Q(date__year=year) &
-                Q(date__month=month)).aggregate(
-                fsum=Coalesce(Sum('amount'), 0))
-            to_account_sum = TransactionEntry.objects.filter(Q(to_account__account_group__account_subtype=self) & Q(date__year=year) &
-                Q(date__month=month)).aggregate(
-                tsum=Coalesce(Sum('amount'), 0))
-            balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
-        else:
-            from_account_sum = TransactionEntry.objects.filter(from_account__account_group__account_subtype=self).aggregate(
-                fsum=Coalesce(Sum('amount'), 0))
-            to_account_sum = TransactionEntry.objects.filter(to_account__account_group__account_subtype=self).aggregate(
-                tsum=Coalesce(Sum('amount'), 0))
-            balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
+        from_account_sum = TransactionEntry.objects.filter(
+            from_account__account_group__account_subtype=self
+            ).aggregate(
+            fsum=Coalesce(Sum('amount'), 0)
+            )
+        to_account_sum = TransactionEntry.objects.filter(
+            to_account__account_group__account_subtype=self
+            ).aggregate(
+            tsum=Coalesce(Sum('amount'), 0)
+            )
+        balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
         return balance_account
-
-    def get_budget(self, year=None, month=None):
-        budget = BudgetEntry.objects.filter(Q(account__account_group__account_subtype=self) & Q(month=month) & Q(year=year))
-        return budget.aggregate(sum=Coalesce(Sum('amount'), 0))['sum']
-
-    def get_available(self, year=None, month=None):
-        return self.get_budget(year, month) - self.get_balance(year, month)
 
     def __str__(self):
         return self.name
@@ -67,23 +57,6 @@ class AccountGroup(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(max_length=1000, null=True, blank=True)
     account_subtype = models.ForeignKey(AccountSubType, on_delete=models.CASCADE, related_name='account_gorups')    
-
-    def get_balance(self, year=None, month=None):
-        from_account_sum = TransactionEntry.objects.filter(Q(from_account__account_group=self) & Q(date__year=year) &
-            Q(date__month=month)).aggregate(
-            fsum=Coalesce(Sum('amount'), 0))
-        to_account_sum = TransactionEntry.objects.filter(Q(to_account__account_group=self) & Q(date__year=year) &
-            Q(date__month=month)).aggregate(
-            tsum=Coalesce(Sum('amount'), 0))
-        balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
-        return balance_account
-
-    def get_budget(self, year=None, month=None):
-        budget = BudgetEntry.objects.filter(Q(account__account_group=self) & Q(month=month) & Q(year=year))
-        return budget.aggregate(sum=Coalesce(Sum('amount'), 0))['sum']
-
-    def get_available(self, year=None, month=None):
-        return self.get_budget(year, month) - self.get_balance(year, month)
 
     def __str__(self):
         return self.name
@@ -101,29 +74,6 @@ class Account(models.Model):
 
     def __str__(self):
         return self.name
-
-    def get_balance(self, year=None, month=None):
-        if year:                
-            from_account_sum = TransactionEntry.objects.filter(Q(from_account=self) & Q(date__year=year) &
-                Q(date__month=month)).aggregate(
-                fsum=Coalesce(Sum('amount'), 0))
-            to_account_sum = TransactionEntry.objects.filter(Q(to_account=self) & Q(date__year=year) &
-                Q(date__month=month)).aggregate(
-                tsum=Coalesce(Sum('amount'), 0))
-        else:
-            from_account_sum = TransactionEntry.objects.filter(from_account=self).aggregate(
-                fsum=Coalesce(Sum('amount'), 0))
-            to_account_sum = TransactionEntry.objects.filter(to_account=self).aggregate(
-                tsum=Coalesce(Sum('amount'), 0))
-        balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
-        return balance_account
-
-    def get_budget(self, year=None, month=None):
-        budget = BudgetEntry.objects.filter(Q(account=self) & Q(month=month) & Q(year=year))
-        return budget.aggregate(sum=Coalesce(Sum('amount'), 0))['sum']
-
-    def get_available(self, year=None, month=None):
-        return self.get_budget(year, month) - self.get_balance(year, month)
 
 
 class ClosingDate(models.Model):
