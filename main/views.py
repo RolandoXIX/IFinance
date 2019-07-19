@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.datetime_safe import datetime
 from django.views.generic.base import View
 from main.forms import TransactionForm, AccountCreateForm, AccountEditForm, CategoryForm, BudgetEntryForm, CategoryGroupForm
-from main.models import Account, TransactionEntry, BudgetEntry, AccountType, AccountSubType, AccountGroup
+from main.models import Account, TransactionEntry, BudgetEntry, CategoryGroup
 from django.db.models import Sum, Q
 import datetime
 import calendar
@@ -16,16 +16,22 @@ from dateutil import relativedelta
 class AccountsMixin:
 
     def get_accounts(self):
-        return Account.objects.filter(account_group__account_subtype__account_type__name='Account')
+        return Account.objects.filter(account_group__name__in=['Budget', 'Tracking', 'Credit'])
 
-    def get_account_subtypes(self):
-        return AccountSubType.objects.filter(account_type__name='Account')        
+    def get_account_groups(self):
+        account_groups = list(self.get_accounts().values_list('account_group__name', flat=True).distinct())
+        return CategoryGroup.objects.filter(name__in=account_groups)        
 
-    def get_categories(self):
-        return Account.objects.filter(account_group__account_subtype__account_type__name='Category')
+    def get_budget_accounts(self):
+        return Account.objects.filter(
+            ~Q(account_group__group_type='A') |
+            Q(account_group__name='Credit')
+            )
+    
+    def get_budget_groups(self):
+        budget_groups = list(self.get_budget_accounts().values_list('account_group__name', flat=True).distinct())
+        return CategoryGroup.objects.filter(name__in=budget_groups).order_by('ordering')
 
-    def get_category_groups(self):
-        return AccountGroup.objects.filter(account_subtype__account_type__name='Category')        
 
     def get_active_account(self, pk):
         try:
@@ -65,7 +71,7 @@ class ListDeleteTransactions(View, AccountsMixin):
         else:
             transactions = TransactionEntry.objects.all
         context = {
-            'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'transactions': transactions,
+            'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 'transactions': transactions,
             'active': self.get_active_account(account), 
         }
         return render(request, 'main/transactions_list.html', context)
@@ -88,7 +94,7 @@ class CreateEditTransaction(View, AccountsMixin):
             form = TransactionForm(instance=instance)
         else:
             form = TransactionForm(initial={'date': datetime.date.today(), 'from_account': account, 'entry_type': 'T'})
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 'active': self.get_active_account(account)}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 'form': form, 'active': self.get_active_account(account)}
         return render(request, 'main/create_edit.html', context)
 
     def post(self, request, pk=None, account=None):
@@ -99,7 +105,7 @@ class CreateEditTransaction(View, AccountsMixin):
             form = TransactionForm(request.POST, instance=TransactionEntry.objects.get(pk=pk))
         except ObjectDoesNotExist:
             form = TransactionForm(request.POST)
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 'active': self.get_active_account(account)}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 'form': form, 'active': self.get_active_account(account)}
 
         if form.is_valid():
             form.save()
@@ -127,7 +133,7 @@ class CreateEditAccount(View, AccountsMixin):
             form = AccountEditForm(instance=instance)
         else:
             form = AccountCreateForm()
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 'active': self.get_active_account(account)}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 'form': form, 'active': self.get_active_account(account)}
         return render(request, 'main/create_edit.html', context)
 
     def post(self, request, account=None):
@@ -137,7 +143,7 @@ class CreateEditAccount(View, AccountsMixin):
             form = AccountEditForm(request.POST, instance=instance)
         except ObjectDoesNotExist:
             form = AccountCreateForm(request.POST)
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 'active': self.get_active_account(None)}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 'form': form, 'active': self.get_active_account(None)}
 
         if form.is_valid():
             new_account = form.save()
@@ -153,7 +159,7 @@ class DeleteAccount(View, AccountsMixin):
     def get(self, request, account=None):
 
         get_object_or_404(Account, pk=account)
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'active': self.get_active_account(account)}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 'active': self.get_active_account(account)}
         return render(request, 'main/delete.html', context)
 
     def post(self, request, account=None):
@@ -173,7 +179,7 @@ class CreateEditCategory(View, AccountsMixin):
             form = CategoryForm(instance=instance)
         else:
             form = CategoryForm()
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(),
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(),
         'form': form, 'year': year, 'month': month}
         return render(request, 'main/create_edit_category.html', context)
 
@@ -186,10 +192,11 @@ class CreateEditCategory(View, AccountsMixin):
             form = CategoryForm(request.POST, instance=instance)
         except ObjectDoesNotExist:
             form = CategoryForm(request.POST)
-        context = {'accounts': self.get_accounts(), 'form': form}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(),
+        'form': form, 'year': year, 'month': month}
 
         if form.is_valid():
-            form.save()
+            new_account = form.save()
             return HttpResponseRedirect(redirect)
         else:
             return render(request, 'main/create_edit_category.html', context)
@@ -200,11 +207,11 @@ class CreateEditCategoryGroup(View, AccountsMixin):
     def get(self, request, year, month, category_group=None):
 
         if category_group:
-            instance = get_object_or_404(AccountGroup, pk=category_group)
+            instance = get_object_or_404(CategoryGroup, pk=category_group)
             form = CategoryGroupForm(instance=instance)
         else:
             form = CategoryGroupForm()
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(),
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(),
         'form': form, 'year': year, 'month': month}
         return render(request, 'main/create_edit_category.html', context)
 
@@ -213,17 +220,19 @@ class CreateEditCategoryGroup(View, AccountsMixin):
         redirect = reverse('budget', kwargs={'year': year, 'month': month})
         
         try:
-            instance = AccountGroup.objects.get(pk=category_group)
+            instance = CategoryGroup.objects.get(pk=category_group)
             form = CategoryGroupForm(request.POST, instance=instance)
         except ObjectDoesNotExist:
             form = CategoryGroupForm(request.POST)
-        context = {'accounts': self.get_accounts(), 'form': form}
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(),
+        'form': form, 'year': year, 'month': month}
 
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(redirect)
         else:
             return render(request, 'main/create_edit_category.html', context)
+
 
 class Budget(View, AccountsMixin):
 
@@ -238,18 +247,13 @@ class Budget(View, AccountsMixin):
         next_month = {'year': next_month.year, 'month': next_month.month}
         previous_month = reference_date + relativedelta.relativedelta(months=-1)
         previous_month = {'year': previous_month.year, 'month': previous_month.month}
-        
-        category_subtypes = AccountSubType.objects.filter(account_type__name='Category')
         month_abbr = calendar.month_abbr[month]
 
-        balance_budget = 0
-        for subtype in category_subtypes:
-            balance_budget += -subtype.get_budget(year=year, month=month)
-
         context = {
-            'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'categories': self.get_categories(), 
-            'category_groups': self.get_category_groups(), 'year': year, 'month': month, 'previous_month': previous_month, 
-            'next_month': next_month, 'category_subtypes': category_subtypes, 'month_abbr': month_abbr, 'balance_budget': balance_budget 
+            'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 
+            'categories': self.get_budget_accounts(), 'budget_groups': self.get_budget_groups, 
+            'year': year, 'month': month, 'previous_month': previous_month, 'next_month': next_month, 
+            'month_abbr': month_abbr, 
          }
         return render(request, 'main/budget.html', context)
 
@@ -263,7 +267,7 @@ class CreateEditBudgetEntry(View, AccountsMixin):
             form = BudgetEntryForm(instance=instance)
         except ObjectDoesNotExist:
             form = BudgetEntryForm(initial={'account': category, 'year': year, 'month': month})
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 'form': form, 
         'year': year, 'month': month}
         return render(request, 'main/budget_entry.html', context)
 
@@ -276,7 +280,7 @@ class CreateEditBudgetEntry(View, AccountsMixin):
             form = BudgetEntryForm(request.POST, instance=instance)
         except ObjectDoesNotExist:
             form = BudgetEntryForm(request.POST)
-        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_subtypes(), 'form': form, 
+        context = {'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 'form': form, 
         'year': year, 'month': month}
 
         if form.is_valid():

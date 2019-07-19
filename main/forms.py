@@ -1,5 +1,5 @@
 from django.forms import ModelForm, DateInput
-from main.models import TransactionEntry, Account, AccountType, BudgetEntry, AccountGroup, AccountSubType
+from main.models import TransactionEntry, Account, BudgetEntry, CategoryGroup
 from django.db.models import Q
 
 
@@ -14,25 +14,25 @@ class TransactionForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['from_account'].queryset = Account.objects.filter(account_group__account_subtype__account_type__name='Account')
+        # self.fields['from_account'].queryset = Account.objects.filter(account_group__account_subtype__account_type__name='Account')
         
-        self.fields['to_account'].queryset = Account.objects.none()
+        self.fields['to_account'].queryset = Account.objects.exclude(account_group__group_type__isnull=True)
 
-        if 'from_account' in self.data:
-            self.fields['to_account'].queryset = Account.objects.all()
+        # if 'from_account' in self.data:
+        #     self.fields['to_account'].queryset = Account.objects.all()
         
-        elif self.initial['from_account']:
-            id_from_account = self.initial['from_account']
-            from_account = Account.objects.get(pk=id_from_account)
+        # elif self.initial['from_account']:
+        #     id_from_account = self.initial['from_account']
+        #     from_account = Account.objects.get(pk=id_from_account)
 
-            if from_account.account_group.account_subtype.name == 'Tracking':
-                self.fields['to_account'].queryset = Account.objects.filter(
-                    ~Q(pk=id_from_account) & Q(account_group__account_subtype__account_type__name='Account')
-                    )
-            else:
-                self.fields['to_account'].queryset = Account.objects.filter(
-                    ~Q(pk=id_from_account) & ~Q(account_group__account_subtype__account_type__name='Special')
-                    )
+        #     if from_account.account_group.account_subtype.name == 'Tracking':
+        #         self.fields['to_account'].queryset = Account.objects.filter(
+        #             ~Q(pk=id_from_account) & Q(account_group__account_subtype__account_type__name='Account')
+        #             )
+        #     else:
+        #         self.fields['to_account'].queryset = Account.objects.filter(
+        #             ~Q(pk=id_from_account) & ~Q(account_group__account_subtype__account_type__name='Special')
+        #             )
 
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
@@ -43,12 +43,10 @@ class AccountCreateForm(ModelForm):
 
     class Meta:
         model = Account
-        fields = ['name', 'description', 'actual_balance', 'account_group', 'currency']
+        fields = ['name', 'description', 'actual_balance', 'account_type', 'currency']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.fields['account_group'].queryset = AccountGroup.objects.filter(account_subtype__account_type__name='Account')
 
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
@@ -77,7 +75,7 @@ class CategoryForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields['account_group'].queryset = AccountGroup.objects.filter(account_subtype__account_type__name='Category')
+        self.fields['account_group'].queryset = CategoryGroup.objects.filter(group_type__in=['I', 'O'])
 
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
@@ -87,14 +85,11 @@ class CategoryForm(ModelForm):
 class CategoryGroupForm(ModelForm):
 
     class Meta:
-        model = AccountGroup
-        fields = ['name', 'description', 'account_subtype']
+        model = CategoryGroup
+        fields = ['name', 'description', 'group_type']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.fields['account_subtype'].queryset = AccountSubType.objects.filter(account_type__name='Category')
-
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
             field.widget.attrs['is'] = field_name
@@ -108,7 +103,6 @@ class BudgetEntryForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
             field.widget.attrs['is'] = field_name
