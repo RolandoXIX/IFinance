@@ -4,11 +4,11 @@
 
 {% block content %}
 
-<div class="container-fluid table" style="line-height: 0.8; font-size:80%;">
+<div class="container-fluid table" style="line-height: 0.5; font-size:73%;">
 
         <table id="categories" class="table table-hover col-6">
           <thead>
-            <tr>
+            <tr class="text-uppercase">
               <th scope="col" style="width: 100%">Category</th>
               <th align="right" scope="col" style="width: 40%">Budget</th>
               <th align="right" scope="col" style="width: 40%">Activity</th>
@@ -17,31 +17,27 @@
           </thead>
           <tbody>
             
-            {% for subtype in category_subtypes %}
-              <tr class="table-primary font-weight-bold">
-  	            <td>{{subtype.name}}</td>
-  	            <td align="right">{% category_method subtype 'get_budget' year month %}</td>
-  	            <td align="right">{% category_method subtype 'get_balance' year month %}</td>
-  	            <td align="right">{% category_method subtype 'get_available' year month %}</td>
-              </tr>            
-              {% for group in category_groups %}
-                {% if group.account_subtype == subtype %}
-                  <tr class="font-weight-bold">
-                    <td>{{group.name}}</td>
-                    <td align="right">{% category_method group 'get_budget' year month %}</td>
-                    <td align="right">{% category_method group 'get_balance' year month %}</td>
-                    <td align="right">{% category_method group 'get_available' year month %}</td>
+            {% for group in budget_groups %}
+              {% if group.group_type == 'I' %}
+              <tr class="table-success font-weight-bold">
+              {% elif group.group_type == 'Z' %}
+              <tr class="table-active font-weight-bold">
+              {% else %}
+              <tr class="table-danger font-weight-bold">
+              {% endif %}
+  	            <td>{{group.get_budget_group}}</td>
+  	            <td align="right"></td>
+  	            <td align="right"></td>
+  	            <td align="right"></td>
+              </tr>
+              {% for category in categories %}
+                {% if category.account_group == group %}
+                  <tr>
+                    <td>{{category.name}}</td>
+                    <td align="right"></td>
+                    <td align="right"></td>
+                    <td align="right"></td>
                   </tr>
-                  {% for category in categories %}
-                    {% if category.account_group == group %}
-                      <tr>
-          	            <td><a href={% url 'edit_category' year month category.pk %}>{{ category.name }}</td></a>
-          	            <td align="right"><a href={% url 'edit_budget' year month category.pk %}>{% category_method category 'get_budget' year month %}</td></a>
-          	            <td align="right">{% category_method category 'get_balance' year month %}</td>
-                        <td align="right">{% category_method_abs category 'get_available' year month %}</td>
-                      </tr>
-                    {% endif %}
-                  {% endfor %}
                 {% endif %} 
               {% endfor %}
             {% endfor %}
@@ -55,8 +51,6 @@
 <a href={% url 'budget' previous_month.year previous_month.month %} style="color:black" class='pl-5'><span class="oi oi-caret-left mr-2"></span></a>
 <div class="btn btn-success font-weight-bold">{{ month_abbr|upper }} {{ year }}</div>
 <a href={% url 'budget' next_month.year next_month.month %} style="color:black"><span class="oi oi-caret-right ml-2"></span></a>
-<div class="col-1"></div>
-<span class='small mr-2'>Budget Balance = </span><div class="btn btn-info"><b>{{ balance_budget|floatformat:2|intcomma }}</b></div>
 
 <div class="collapse navbar-collapse" id="navbarSupportedContent">
   <ul class="navbar-nav ml-auto mt-2 mt-lg-0">

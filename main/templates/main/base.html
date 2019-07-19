@@ -104,29 +104,35 @@
 
         <!-- Sidebar accounts and balance -->
         
+        {% if account_subtypes %}
         {% for subtype in account_subtypes %}
           <a class="list-group-item py-0 d-flex justify-content-between align-items-center bg-light border-top small text-info font-weight-bold">
             {{ subtype.name }}
             <span class="badge badge-primary badge-pill badge-info">{{ subtype.get_balance|floatformat:2|intcomma }}</span>
           </a>
           {% for account in accounts %}
-          {% if account.account_group.account_subtype == subtype %}
+          {% if account.account_group == subtype %}
             <a href="{% url 'transactions' account.pk %}" class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light small">
               {{ account.name }}
               {% if account.actual_balance > 0 %}
-              <span class="badge badge-primary badge-pill badge-light">{{ account.actual_balance|floatformat:2|intcomma }}</span>
+              <span class="badge badge-primary badge-pill badge-success">{{ account.actual_balance|floatformat:2|intcomma }}</span>
               {% else %}
-              <span class="badge badge-primary badge-pill badge-light">{{ account.actual_balance|floatformat:2|intcomma }}</span>
+              <span class="badge badge-primary badge-pill badge-danger">{{ account.actual_balance|floatformat:2|intcomma }}</span>
               {% endif %}
             </a>
           {% endif %}
           {% endfor %}
           <hr>
         {% endfor %}
+        {% else %}
+        <span class="list-group-item py-0 border-top list-group-item-action d-flex justify-content-between align-items-center bg-light small pb-4 pt-4">
+        Add an account to start!!
+        </span>
+        {% endif %}
         
         <!-- Add account button -->
         <br>
-        <a class="list-group-item py-0 border-0 list-group-item-action d-flex justify-content-between align-items-center bg-light" href="{% url 'add_account' %}" ><button type="button" class="btn btn-outline-secondary btn-sm">Add Account</button></a>
+        <a class="pl-3" href="{% url 'add_account' %}" ><button type="button" class="btn btn-outline-secondary btn-sm">Add Account</button></a>
 
       </div>
     </div>

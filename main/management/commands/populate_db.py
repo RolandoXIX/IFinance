@@ -80,7 +80,8 @@ class Command(BaseCommand):
         self.create_account_subtype('Special', AccountType.objects.get(name='Special'))
 
         # AccountGroup
-        self.create_account_group('Special', AccountSubType.objects.get(name='Special'))
+        self.create_account_group('Special Inflows', AccountSubType.objects.get(name='Special'))
+        self.create_account_group('Special Categories', AccountSubType.objects.get(name='Special'))
         self.create_account_group('Bank', AccountSubType.objects.get(name='Budget'))
         self.create_account_group('Cash', AccountSubType.objects.get(name='Budget'))
         self.create_account_group('Credit Card', AccountSubType.objects.get(name='Credit'))
@@ -96,7 +97,9 @@ class Command(BaseCommand):
         peso.save()
 
         # Account and Initial Balance
-        self.create_account('Manual adjustment', 0, 'Special')
+        self.create_account('Manual adjustment', 0, 'Special Categories')
+        self.create_account('Credit Inflow', 0, 'Special Inflows')
+        self.create_account('Tracking Inflow', 0, 'Special Inflows')
         self.create_account('Wallet', 1000, 'Cash')
         self.create_account('Bank American', 56000, 'Bank')
         self.create_account('Visa', -6000, 'Credit Card')
@@ -111,7 +114,7 @@ class Command(BaseCommand):
         self.create_account('Hollidays', 0, 'Other Outflows')
         self.create_account('Salary', 0, 'Other Inflows')
         self.create_account('Other Inflows', 0, 'Other Inflows')
-        self.create_account('Other Outflows', 0, 'Other Outflowsx1')
+        self.create_account('Other Outflows', 0, 'Other Outflows')
 
 
         # Transactions
