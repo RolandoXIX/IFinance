@@ -41,14 +41,15 @@ class AccountsMixin:
         return active
 
     def adjust_balance(self, account):
+        is_new_account= TransactionEntry.objects.filter(from_account=account).count() == 0
         adjust = account.get_balance() - account.actual_balance
-        if adjust:
+        if adjust or is_new_account:
             transaction = TransactionEntry(
                 date=datetime.date.today(),
                 entry_type='T',
                 from_account=account,
                 to_account=Account.objects.get(name='Manual adjustment'),
-                description='Update balance',
+                description='Initial Balance'if is_new_account else 'Update balance',
                 amount=adjust,
                 conciliated=True,
             )

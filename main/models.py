@@ -100,6 +100,9 @@ class Account(models.Model):
     def clean(self):
         if self.account_type:
             self.account_group = CategoryGroup.objects.get(name=getattr(Account, self.account_type))
+        if self.actual_balance == None:
+            self.actual_balance = 0
+
 
     def __str__(self):
         return self.name
