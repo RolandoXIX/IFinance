@@ -46,6 +46,7 @@ class CategoryGroup(models.Model):
             budget_group = self.name
         return budget_group
 
+
     def __str__(self):
         return self.name
 
@@ -89,13 +90,27 @@ class Account(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='accounts', null=True, blank=True)
     active = models.BooleanField(default=True, null=True)
 
-    def get_balance(self, year=None, month=None):
-        from_account_sum = TransactionEntry.objects.filter(from_account=self).aggregate(
-            fsum=Coalesce(Sum('amount'), 0))
-        to_account_sum = TransactionEntry.objects.filter(to_account=self).aggregate(
-            tsum=Coalesce(Sum('amount'), 0))
-        balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
-        return balance_account
+    def get_balance(self, month=None, year=None):
+        if year:
+            from_account_sum = TransactionEntry.objects.filter(
+                Q(from_account=self) &
+                Q(date__year=year) &
+                Q(date__month=month)).aggregate(
+                fsum=Coalesce(Sum('amount'), 0))
+            to_account_sum = TransactionEntry.objects.filter(
+                Q(to_account=self) &
+                Q(date__year=year) &
+                Q(date__month=month)).aggregate(
+                tsum=Coalesce(Sum('amount'), 0))
+            balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
+            return balance_account
+        else:
+            from_account_sum = TransactionEntry.objects.filter(from_account=self).aggregate(
+                fsum=Coalesce(Sum('amount'), 0))
+            to_account_sum = TransactionEntry.objects.filter(to_account=self).aggregate(
+                tsum=Coalesce(Sum('amount'), 0))
+            balance_account = to_account_sum['tsum'] - from_account_sum['fsum']
+            return balance_account
 
     def clean(self):
         if self.account_type:
@@ -138,7 +153,7 @@ class TransactionEntry(models.Model):
                                      null=True, related_name='transaction_entries_from')
     to_account = models.ForeignKey(Account, on_delete=models.CASCADE,
                                    null=True, related_name='transaction_entries_to')
-    description = models.CharField(max_length=140, null=True, blank=True)
+    description = models.CharField(max_length=140, blank=True)
     amount = models.FloatField()
     conciliated = models.BooleanField(default=True)
 

@@ -20,7 +20,7 @@ class AccountsMixin:
 
     def get_account_groups(self):
         account_groups = list(self.get_accounts().values_list('account_group__name', flat=True).distinct())
-        return CategoryGroup.objects.filter(name__in=account_groups)        
+        return CategoryGroup.objects.filter(name__in=account_groups)      
 
     def get_budget_accounts(self):
         return Account.objects.filter(
@@ -30,7 +30,35 @@ class AccountsMixin:
     
     def get_budget_groups(self):
         budget_groups = list(self.get_budget_accounts().values_list('account_group__name', flat=True).distinct())
-        return CategoryGroup.objects.filter(name__in=budget_groups).order_by('ordering')
+        return CategoryGroup.objects.filter(name__in=budget_groups).order_by('-group_type')
+
+    def get_budget_accounts_and_totals(self, month, year):
+        budget_accounts = Account.objects.filter(
+            ~Q(account_group__group_type='A') |
+            Q(account_group__name='Credit')
+            )
+        accounts_and_totals = []
+        for account in budget_accounts:
+            budget = BudgetEntry.objects.filter(
+                Q(account=account) &
+                Q(month=month) &
+                Q(year=year)).aggregate(sum=Coalesce(Sum('amount'), 0))['sum']
+            activity = account.get_balance(month, year)
+            available = budget - activity
+            accounts_and_totals.append((account, budget, activity, available))
+        return accounts_and_totals
+
+    def get_budget_groups_and_totals(self, month, year):
+        groups_and_totals = []
+        for group in self.get_budget_groups():
+            group_totals = []
+            for a, b, c, d in self.get_budget_accounts_and_totals(month, year):
+                if a.account_group == group:
+                    group_totals.append((b, c, d))
+            totals = list(map(sum, zip(*group_totals)))
+            totals.append(group)
+            groups_and_totals.append(totals)
+        return groups_and_totals
 
 
     def get_active_account(self, pk):
@@ -250,11 +278,13 @@ class Budget(View, AccountsMixin):
         previous_month = {'year': previous_month.year, 'month': previous_month.month}
         month_abbr = calendar.month_abbr[month]
 
+        group_order = ['I', 'Z', 'A', 'O']
+
         context = {
             'accounts': self.get_accounts(), 'account_subtypes': self.get_account_groups(), 
-            'categories': self.get_budget_accounts(), 'budget_groups': self.get_budget_groups, 
+            'categories': self.get_budget_accounts_and_totals(month, year), 'budget_groups': self.get_budget_groups_and_totals(month, year), 
             'year': year, 'month': month, 'previous_month': previous_month, 'next_month': next_month, 
-            'month_abbr': month_abbr, 
+            'month_abbr': month_abbr, 'group_order': group_order,
          }
         return render(request, 'main/budget.html', context)
 

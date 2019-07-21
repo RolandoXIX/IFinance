@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from main.models import AccountType, Account, TransactionEntry, Currency, BudgetEntry, AccountSubType, AccountGroup
+from main.models import CategoryGroup, Account, TransactionEntry, Currency, BudgetEntry, AccountGroup
 from django.contrib.auth.models import User
 import datetime
 
@@ -9,21 +9,14 @@ class Command(BaseCommand):
     help = 'populate db with start parameters and basic transactions'
 
 
-    def create_account_type(self, name):
-        account_type = AccountType(name=name)
-        account_type.save()
+    def create_category_group(self, name, group_type):
+        category_group = CategoryGroup(name=name, group_type=group_type)
+        category_group.save()
+      
 
-    def create_account_subtype(self, name, account_type):
-        account_subtype = AccountSubType(name=name, account_type=account_type)
-        account_subtype.save()
-
-    def create_account_group(self, name, account_subtype):
-        account_group = AccountGroup(name=name, account_subtype=account_subtype)
-        account_group.save()        
-
-    def create_account(self, name, balance, account_group):
+    def create_account(self, name, balance, account_type):
         new_account = Account(
-            name=name, actual_balance=balance, account_group=AccountGroup.objects.get(name=account_group),
+            name=name, actual_balance=balance, account_type=account_type,
             currency=Currency.objects.get(name='Peso'))
         new_account.save()
 
@@ -33,7 +26,7 @@ class Command(BaseCommand):
                 entry_type='T',
                 from_account=new_account,
                 to_account=Account.objects.get(name='Manual adjustment'),
-                description='Update balance',
+                description='Initial Balance',
                 amount=balance,
                 conciliated=True,
             )
@@ -67,29 +60,10 @@ class Command(BaseCommand):
         #User.objects.create_superuser('admin', 'admin@myproject.com', 'admin')
 
         # AccountType
-        self.create_account_type('Category')
-        self.create_account_type('Account')
-        self.create_account_type('Special')
-
-        # AccountSubType
-        self.create_account_subtype('Inflow', AccountType.objects.get(name='Category'))
-        self.create_account_subtype('Outflow', AccountType.objects.get(name='Category'))
-        self.create_account_subtype('Budget', AccountType.objects.get(name='Account'))
-        self.create_account_subtype('Credit', AccountType.objects.get(name='Account'))
-        self.create_account_subtype('Tracking', AccountType.objects.get(name='Account'))
-        self.create_account_subtype('Special', AccountType.objects.get(name='Special'))
-
-        # AccountGroup
-        self.create_account_group('Special Inflows', AccountSubType.objects.get(name='Special'))
-        self.create_account_group('Special Categories', AccountSubType.objects.get(name='Special'))
-        self.create_account_group('Bank', AccountSubType.objects.get(name='Budget'))
-        self.create_account_group('Cash', AccountSubType.objects.get(name='Budget'))
-        self.create_account_group('Credit Card', AccountSubType.objects.get(name='Credit'))
-        self.create_account_group('Credit Line', AccountSubType.objects.get(name='Credit'))
-        self.create_account_group('Savings', AccountSubType.objects.get(name='Tracking'))
-        self.create_account_group('Investments', AccountSubType.objects.get(name='Tracking'))
-        self.create_account_group('Other Inflows', AccountSubType.objects.get(name='Inflow'))
-        self.create_account_group('Other Outflows', AccountSubType.objects.get(name='Outflow'))
+        self.create_category_group('Gneral Inflows', 'I')
+        self.create_category_group('Other Inflows', 'I')
+        self.create_category_group('General Expenses', 'O')
+        self.create_category_group('Other Expenses', 'O')
 
 
         # Currency
@@ -97,14 +71,12 @@ class Command(BaseCommand):
         peso.save()
 
         # Account and Initial Balance
-        self.create_account('Manual adjustment', 0, 'Special Categories')
-        self.create_account('Credit Inflow', 0, 'Special Inflows')
-        self.create_account('Tracking Inflow', 0, 'Special Inflows')
-        self.create_account('Wallet', 1000, 'Cash')
-        self.create_account('Bank American', 56000, 'Bank')
-        self.create_account('Visa', -6000, 'Credit Card')
-        self.create_account('Mastercard', -9000, 'Credit Card')
-        self.create_account('Plazo Fijo', 100000, 'Investments')
+        self.create_account('Credit Inflow', 0, 'CC')
+        self.create_account('Wallet', 1000, 'CA')
+        self.create_account('Bank American', 56000, 'BK')
+        self.create_account('Visa', -6000, 'CC')
+        self.create_account('Mastercard', -9000, 'CC')
+        self.create_account('Plazo Fijo', 100000, 'IN')
         self.create_account('Market', 0, 'Other Outflows')
         self.create_account('Education', 0, 'Other Outflows')
         self.create_account('Public Services', 0, 'Other Outflows')

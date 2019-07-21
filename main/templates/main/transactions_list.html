@@ -44,7 +44,7 @@
 
               {% if transaction.to_account in accounts and transaction.from_account in accounts %}
               <td><span class="oi oi-transfer" style="color:blue"></span></td>
-              {% elif transaction.from_account in accounts and transaction.amount < 0 %}
+              {% elif transaction.from_account in accounts and transaction.amount <= 0 %}
               <td><span class="oi oi-arrow-left" style="color:green"></span></td>
               {% else %}
               <td><span class="oi oi-arrow-right" style="color:red"></span></td>

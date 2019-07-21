@@ -17,28 +17,32 @@
           </thead>
           <tbody>
             
-            {% for group in budget_groups %}
-              {% if group.group_type == 'I' %}
-              <tr class="table-success font-weight-bold">
-              {% elif group.group_type == 'Z' %}
-              <tr class="table-active font-weight-bold">
-              {% else %}
-              <tr class="table-danger font-weight-bold">
-              {% endif %}
-  	            <td>{{group.get_budget_group}}</td>
-  	            <td align="right"></td>
-  	            <td align="right"></td>
-  	            <td align="right"></td>
-              </tr>
-              {% for category in categories %}
-                {% if category.account_group == group %}
-                  <tr>
-                    <td>{{category.name}}</td>
-                    <td align="right"></td>
-                    <td align="right"></td>
-                    <td align="right"></td>
+            {% for order in group_order %}
+              {% for budget, activity, available, group in budget_groups %}
+                {% if group.group_type == order %}
+                  {% if group.group_type == 'I' %}
+                  <tr class="table-success font-weight-bold">
+                  {% elif group.group_type == 'Z' %}
+                  <tr class="table-active font-weight-bold">
+                  {% else %}
+                  <tr class="table-danger font-weight-bold">
+                  {% endif %}
+      	            <td>{{group.get_budget_group}}</td>
+      	            <td align="right">{{ budget|floatformat:2|intcomma }}</td>
+      	            <td align="right">{{ activity|floatformat:2|intcomma }}</td>
+      	            <td align="right">{{ available|floatformat:2|intcomma }}</td>
                   </tr>
-                {% endif %} 
+                  {% for category, budget, activity, available in categories %}
+                    {% if category.account_group == group %}
+                      <tr>
+                        <td>{{category.name}}</td>
+                        <td align="right">{{ budget|floatformat:2|intcomma }}</td>
+                        <td align="right">{{ activity|floatformat:2|intcomma }}</td>
+                        <td align="right">{{ available|floatformat:2|intcomma }}</td>
+                      </tr>
+                    {% endif %} 
+                  {% endfor %}
+                {% endif %}
               {% endfor %}
             {% endfor %}
           </tbody>
